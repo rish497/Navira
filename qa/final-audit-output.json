@@ -1,0 +1,154 @@
+[
+  {
+    "width": 390,
+    "route": "command",
+    "overflow": 0,
+    "smallButtons": []
+  },
+  {
+    "width": 390,
+    "route": "map",
+    "overflow": 0,
+    "smallButtons": []
+  },
+  {
+    "width": 390,
+    "route": "incidents",
+    "overflow": 0,
+    "smallButtons": []
+  },
+  {
+    "width": 390,
+    "route": "evacuation",
+    "overflow": 0,
+    "smallButtons": []
+  },
+  {
+    "width": 390,
+    "route": "dispatch",
+    "overflow": 0,
+    "smallButtons": []
+  },
+  {
+    "width": 390,
+    "route": "resources",
+    "overflow": 0,
+    "smallButtons": []
+  },
+  {
+    "width": 390,
+    "route": "infrastructure",
+    "overflow": 0,
+    "smallButtons": []
+  },
+  {
+    "width": 390,
+    "route": "simulation",
+    "overflow": 0,
+    "smallButtons": []
+  },
+  {
+    "width": 390,
+    "route": "timeline",
+    "overflow": 0,
+    "smallButtons": []
+  },
+  {
+    "width": 390,
+    "route": "analytics",
+    "overflow": 0,
+    "smallButtons": [
+      {
+        "name": "Current event",
+        "width": 159,
+        "height": 42
+      }
+    ]
+  },
+  {
+    "width": 390,
+    "route": "civilian",
+    "overflow": 0,
+    "smallButtons": []
+  },
+  {
+    "width": 390,
+    "errors": []
+  },
+  {
+    "width": 1440,
+    "route": "command",
+    "overflow": 0,
+    "smallButtons": []
+  },
+  {
+    "width": 1440,
+    "route": "map",
+    "overflow": 0,
+    "smallButtons": []
+  },
+  {
+    "width": 1440,
+    "route": "incidents",
+    "overflow": 0,
+    "smallButtons": []
+  },
+  {
+    "width": 1440,
+    "route": "evacuation",
+    "overflow": 0,
+    "smallButtons": []
+  },
+  {
+    "width": 1440,
+    "route": "dispatch",
+    "overflow": 0,
+    "smallButtons": []
+  },
+  {
+    "width": 1440,
+    "route": "resources",
+    "overflow": 0,
+    "smallButtons": []
+  },
+  {
+    "width": 1440,
+    "route": "infrastructure",
+    "overflow": 0,
+    "smallButtons": []
+  },
+  {
+    "width": 1440,
+    "route": "simulation",
+    "overflow": 0,
+    "smallButtons": []
+  },
+  {
+    "width": 1440,
+    "route": "timeline",
+    "overflow": 0,
+    "smallButtons": []
+  },
+  {
+    "width": 1440,
+    "route": "analytics",
+    "overflow": 0,
+    "smallButtons": [
+      {
+        "name": "Current event",
+        "width": 159,
+        "height": 42
+      }
+    ]
+  },
+  {
+    "width": 1440,
+    "route": "civilian",
+    "overflow": 0,
+    "smallButtons": []
+  },
+  {
+    "width": 1440,
+    "errors": []
+  }
+]

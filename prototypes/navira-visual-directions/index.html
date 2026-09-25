@@ -1,0 +1,535 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <title>NAVIRA Visual Direction Picker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Urbanist:ital,wght@0,400;0,500;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+  <style>
+    :root {
+      font-family: "Urbanist", "Segoe UI", sans-serif;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+      --ease-out: cubic-bezier(.16, 1, .3, 1);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; background: #0f1113; color: #f1eee9; }
+    button, a { font: inherit; }
+    button { color: inherit; }
+    img { display: block; max-width: 100%; }
+    ::selection { background: var(--accent, #ff3b1f); color: var(--selection-text, #0f1113); }
+    :focus-visible { outline: 2px solid var(--accent, #ff3b1f); outline-offset: 4px; }
+
+    #stage { min-height: 100dvh; }
+    .prototype {
+      --surface: #0f1113;
+      --surface-alt: #171a1c;
+      --ink: #f1eee9;
+      --muted: #a7adb0;
+      --line: rgba(241, 238, 233, .18);
+      --accent: #ff3b1f;
+      --selection-text: #0f1113;
+      position: relative;
+      min-height: 100dvh;
+      overflow-x: hidden;
+      background: var(--surface);
+      color: var(--ink);
+    }
+
+    .prototype.terrain {
+      --surface: #f0eee8;
+      --surface-alt: #e4e0d7;
+      --ink: #202624;
+      --muted: #59635f;
+      --line: rgba(32, 38, 36, .2);
+      --accent: #ff5a16;
+      --selection-text: #202624;
+    }
+
+    .prototype.beacon {
+      --surface: #0b0d0d;
+      --surface-alt: #171a1a;
+      --ink: #f2f0e9;
+      --muted: #a2a79f;
+      --line: rgba(242, 240, 233, .2);
+      --accent: #c7ff18;
+      --selection-text: #0b0d0d;
+    }
+
+    .shell { width: min(100% - 48px, 1480px); margin: 0 auto; }
+    .site-nav {
+      min-height: 70px;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      border-bottom: 1px solid var(--line);
+      position: relative;
+      z-index: 5;
+    }
+    .nav-brand { display: inline-flex; align-items: center; gap: 12px; color: inherit; text-decoration: none; font-weight: 800; letter-spacing: .12em; }
+    .nav-mark { width: 26px; height: 26px; color: var(--ink); --mark-accent: var(--accent); }
+    .nav-center { font-size: 13px; color: var(--muted); }
+    .nav-action { justify-self: end; border: 0; background: transparent; padding: 10px 0; border-bottom: 1px solid currentColor; cursor: pointer; font-weight: 700; }
+
+    .hero {
+      min-height: calc(100dvh - 70px);
+      display: grid;
+      align-items: stretch;
+      position: relative;
+    }
+    .hero-copy { position: relative; z-index: 2; }
+    .hero h1 {
+      margin: 0;
+      max-width: 1180px;
+      font-size: clamp(3.3rem, 7vw, 6rem);
+      line-height: .92;
+      letter-spacing: -.035em;
+      font-weight: 700;
+      text-wrap: balance;
+    }
+    .hero p { margin: 0; max-width: 55ch; color: var(--muted); font-size: clamp(1rem, 1.4vw, 1.2rem); line-height: 1.55; }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+    .primary-action, .secondary-action {
+      min-height: 48px;
+      padding: 0 22px;
+      border: 1px solid transparent;
+      border-radius: 4px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      font-weight: 750;
+      white-space: nowrap;
+      transition: transform 180ms var(--ease-out), background 180ms var(--ease-out), color 180ms var(--ease-out);
+    }
+    .primary-action { background: var(--accent); color: var(--selection-text); }
+    .secondary-action { color: var(--ink); border-color: var(--line); background: transparent; }
+    .primary-action:hover, .secondary-action:hover { transform: translateY(-2px); }
+    .primary-action:active, .secondary-action:active { transform: scale(.98); }
+
+    .signal .hero { grid-template-columns: minmax(0, 1.38fr) minmax(320px, .62fr); }
+    .signal .hero-copy { padding: clamp(76px, 10vh, 128px) clamp(28px, 5vw, 88px) 48px 0; display: flex; flex-direction: column; justify-content: center; gap: 54px; }
+    .signal .hero h1 { max-width: 1040px; font-size: clamp(2.7rem, 3.2vw, 3.8rem); }
+    .signal .hero-top { display: grid; gap: 28px; }
+    .signal .hero-visual { position: relative; border-left: 1px solid var(--line); background: #161a1c; overflow: hidden; }
+    .signal .hero-visual img { width: 100%; height: 100%; object-fit: cover; object-position: 8% 50%; filter: saturate(.78) contrast(1.08); opacity: .63; transition: transform 700ms var(--ease-out); }
+    .signal .hero-visual:hover img { transform: scale(1.035); }
+    .signal .route-overlay { position: absolute; inset: 0; background: linear-gradient(115deg, rgba(15,17,19,.78) 0 32%, transparent 62%); }
+    .signal .route-line { position: absolute; inset: 10% 8%; width: 84%; height: 80%; color: var(--accent); }
+    .signal .route-line path { stroke-dasharray: 520; stroke-dashoffset: 520; animation: route-draw 1.8s .25s var(--ease-out) forwards; }
+    .signal .hero-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding-top: 22px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+
+    .terrain .site-nav { border-color: rgba(32,38,36,.28); }
+    .terrain .hero { grid-template-columns: minmax(320px, .72fr) minmax(0, 1.28fr); }
+    .terrain .terrain-visual { position: relative; min-height: 650px; border-right: 1px solid var(--line); overflow: hidden; }
+    .terrain .terrain-visual img { width: 100%; height: 100%; object-fit: cover; object-position: 15% 45%; filter: grayscale(.3) contrast(.92); opacity: .88; transition: transform 700ms var(--ease-out); }
+    .terrain .terrain-visual:hover img { transform: scale(1.035); }
+    .terrain .terrain-visual::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 42%, rgba(240,238,232,.94)); }
+    .terrain .hero-copy { padding: clamp(72px, 9vh, 118px) 0 54px clamp(38px, 7vw, 112px); display: grid; align-content: space-between; gap: 70px; }
+    .terrain .hero h1 { max-width: 1000px; }
+    .terrain .inline-terrain { display: inline-block; width: clamp(100px, 13vw, 190px); height: .58em; margin: 0 .08em; vertical-align: .05em; background: url("assets/terrain-ledger-brand-board.png") 52% 54% / 430% auto; border-radius: 999px; filter: grayscale(.28); }
+
+    .beacon .hero { grid-template-columns: 1fr; padding: 0; }
+    .beacon .beacon-grid { min-height: calc(100dvh - 70px); display: grid; grid-template-columns: 1.55fr .45fr; grid-template-rows: 1fr auto; }
+    .beacon .hero-copy { padding: clamp(80px, 11vh, 140px) clamp(24px, 6vw, 96px); display: flex; flex-direction: column; justify-content: space-between; gap: 60px; border-right: 1px solid var(--line); }
+    .beacon .hero h1 { max-width: 1060px; font-weight: 600; }
+    .beacon .hero h1 em { color: var(--accent); font-style: normal; }
+    .beacon .signal-rail { display: grid; grid-template-rows: repeat(4, 1fr); }
+    .beacon .signal-cell { border-bottom: 1px solid var(--line); display: grid; place-items: center; min-height: 120px; color: var(--muted); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; }
+    .beacon .signal-cell.active { color: var(--selection-text); background: var(--accent); font-weight: 800; }
+    .beacon .beacon-bottom { grid-column: 1 / -1; border-top: 1px solid var(--line); display: grid; grid-template-columns: 1fr auto; gap: 24px; align-items: center; padding: 22px clamp(24px, 6vw, 96px); }
+    .beacon .broadcast-line { height: 8px; background: repeating-linear-gradient(90deg, var(--accent) 0 22px, transparent 22px 28px); max-width: 520px; }
+
+    .role-switcher { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    .role-switcher-inner { min-height: 88px; display: grid; grid-template-columns: minmax(260px, 1fr) auto; gap: 32px; align-items: center; }
+    .role-copy { color: var(--muted); max-width: 70ch; margin: 0; }
+    .role-controls { display: flex; gap: 2px; background: var(--line); }
+    .role-btn { min-height: 42px; padding: 0 16px; border: 0; background: var(--surface); color: var(--muted); cursor: pointer; }
+    .role-btn[aria-pressed="true"] { background: var(--accent); color: var(--selection-text); font-weight: 800; }
+
+    .chapter { padding: clamp(110px, 14vw, 210px) 0; }
+    .chapter h2 { margin: 0; max-width: 950px; font-size: clamp(2.6rem, 5.6vw, 5.3rem); line-height: .96; letter-spacing: -.032em; }
+    .chapter-intro { display: grid; gap: 28px; margin-bottom: 72px; }
+    .chapter-intro p { margin: 0; color: var(--muted); font-size: 1.12rem; line-height: 1.6; max-width: 68ch; }
+
+    .system-grid { display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, minmax(180px, 1fr)); grid-auto-flow: dense; min-height: 620px; border-top: 1px solid var(--line); border-left: 1px solid var(--line); }
+    .system-cell { position: relative; padding: clamp(22px, 3vw, 42px); border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); overflow: hidden; background: var(--surface); }
+    .system-cell h3 { margin: 0 0 14px; font-size: clamp(1.35rem, 2.2vw, 2rem); letter-spacing: -.02em; }
+    .system-cell p { margin: 0; color: var(--muted); line-height: 1.5; max-width: 42ch; }
+    .cell-primary { grid-column: span 2; grid-row: span 2; display: flex; flex-direction: column; justify-content: space-between; }
+    .cell-wide { grid-column: span 2; }
+    .cell-accent { background: var(--accent); color: var(--selection-text); }
+    .cell-accent p { color: color-mix(in srgb, var(--selection-text) 75%, transparent); }
+    .cell-image { padding: 0; }
+    .cell-image img { width: 100%; height: 100%; object-fit: cover; filter: saturate(.65) contrast(1.05); transition: transform 700ms var(--ease-out); }
+    .cell-image:hover img { transform: scale(1.05); }
+    .mark-study { width: min(210px, 56%); color: var(--ink); --mark-accent: var(--accent); }
+    .swatches { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 26px; }
+    .swatch { aspect-ratio: 1; border: 1px solid var(--line); background: var(--swatch); }
+    .icon-row { display: flex; gap: 18px; align-items: end; margin-top: 28px; }
+    .icon-sample { width: 46px; aspect-ratio: 1; border: 1px solid currentColor; display: grid; place-items: center; font-weight: 800; }
+
+    .story { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    .story-layout { display: grid; grid-template-columns: minmax(280px, .68fr) minmax(0, 1.32fr); gap: clamp(40px, 7vw, 110px); padding: clamp(100px, 13vw, 190px) 0; }
+    .story-copy { align-self: start; }
+    .story-copy h2 { font-size: clamp(2.4rem, 4.5vw, 4.8rem); }
+    .story-copy p { color: var(--muted); line-height: 1.7; max-width: 40ch; }
+    .story-board { position: relative; overflow: hidden; border: 1px solid var(--line); background: var(--surface-alt); }
+    .story-board img { width: 100%; height: auto; transition: transform 700ms var(--ease-out); }
+    .story-board:hover img { transform: scale(1.025); }
+    .board-caption { display: grid; grid-template-columns: 1fr auto; gap: 20px; padding: 18px 20px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+
+    .role-carousel { padding: clamp(100px, 13vw, 180px) 0; }
+    .carousel-frame { display: grid; grid-template-columns: .8fr 1.2fr; min-height: 420px; border: 1px solid var(--line); }
+    .carousel-index { padding: 40px; background: var(--accent); color: var(--selection-text); display: flex; flex-direction: column; justify-content: space-between; }
+    .carousel-index strong { font-size: clamp(4rem, 10vw, 9rem); line-height: .8; letter-spacing: -.05em; }
+    .carousel-content { padding: clamp(36px, 6vw, 86px); display: flex; flex-direction: column; justify-content: space-between; gap: 48px; }
+    .carousel-content h2 { margin: 0; max-width: 850px; font-size: clamp(2.2rem, 4.8vw, 4.7rem); line-height: 1; letter-spacing: -.03em; }
+    .carousel-content p { color: var(--muted); line-height: 1.6; max-width: 58ch; }
+    .carousel-controls { display: flex; gap: 8px; }
+    .carousel-button { width: 48px; height: 48px; border: 1px solid var(--line); background: transparent; cursor: pointer; transition: background 160ms ease-out, color 160ms ease-out; }
+    .carousel-button:hover { background: var(--ink); color: var(--surface); }
+
+    .marquee { overflow: hidden; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    .marquee-track { width: max-content; display: flex; gap: 56px; padding: 22px 0; animation: marquee 28s linear infinite; color: var(--muted); font-weight: 700; letter-spacing: .04em; }
+    .marquee:hover .marquee-track { animation-play-state: paused; }
+    .marquee-track span::after { content: "/"; margin-left: 56px; color: var(--accent); }
+
+    .close { padding: clamp(110px, 15vw, 220px) 0 150px; }
+    .close-layout { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(280px, .75fr); gap: 60px; align-items: end; }
+    .close h2 { margin: 0; font-size: clamp(3rem, 7vw, 6rem); line-height: .92; letter-spacing: -.035em; }
+    .close p { color: var(--muted); line-height: 1.6; }
+    .close-note { padding-top: 22px; border-top: 1px solid var(--line); }
+
+    .entrance { opacity: 0; transform: translateY(24px); animation: enter .72s var(--ease-out) forwards; animation-delay: calc(var(--i, 0) * 80ms); }
+    .reveal-word { color: color-mix(in srgb, var(--ink) 16%, transparent); transition: color 140ms linear; }
+
+    @keyframes enter { to { opacity: 1; transform: none; } }
+    @keyframes route-draw { to { stroke-dashoffset: 0; } }
+    @keyframes marquee { to { transform: translateX(-50%); } }
+
+    @media (max-width: 900px) {
+      .shell { width: min(100% - 32px, 1480px); }
+      .site-nav { grid-template-columns: 1fr auto; }
+      .nav-center { display: none; }
+      .signal .hero, .terrain .hero { grid-template-columns: 1fr; }
+      .signal .hero-copy, .terrain .hero-copy { padding: 64px 0; min-height: 640px; }
+      .signal .hero-visual { min-height: 460px; border-left: 0; border-top: 1px solid var(--line); }
+      .terrain .terrain-visual { min-height: 380px; border-right: 0; border-top: 1px solid var(--line); }
+      .terrain .hero-copy { padding-left: 0; }
+      .terrain .hero-copy { order: -1; }
+      .beacon .beacon-grid { grid-template-columns: 1fr; }
+      .beacon .hero-copy { border-right: 0; min-height: 640px; }
+      .beacon .signal-rail { grid-template-columns: repeat(4, 1fr); grid-template-rows: auto; }
+      .beacon .signal-cell { min-height: 70px; border-right: 1px solid var(--line); }
+      .beacon .beacon-bottom { grid-template-columns: 1fr; }
+      .role-switcher-inner { grid-template-columns: 1fr; padding: 22px 0; }
+      .role-controls { overflow-x: auto; }
+      .role-btn { flex: 1 0 auto; }
+      .system-grid { grid-template-columns: repeat(2, 1fr); grid-template-rows: auto; }
+      .cell-primary { grid-column: span 2; min-height: 440px; }
+      .cell-wide { grid-column: span 2; }
+      .system-cell { min-height: 220px; }
+      .story-layout, .carousel-frame, .close-layout { grid-template-columns: 1fr; }
+      .story-copy { position: static !important; }
+      .carousel-index { min-height: 260px; }
+    }
+
+    @media (max-width: 560px) {
+      .shell { width: min(100% - 24px, 1480px); }
+      .site-nav { min-height: 64px; }
+      .nav-action { font-size: 13px; }
+      .hero { min-height: auto; }
+      .hero h1 { font-size: clamp(3rem, 15vw, 4.5rem); }
+      .signal .hero-copy, .terrain .hero-copy, .beacon .hero-copy { min-height: 600px; gap: 40px; }
+      .hero-actions { align-items: stretch; }
+      .primary-action, .secondary-action { width: 100%; }
+      .system-grid { grid-template-columns: 1fr; }
+      .cell-primary, .cell-wide { grid-column: span 1; }
+      .cell-primary { min-height: 420px; }
+      .story-layout { padding: 90px 0; }
+      .board-caption { grid-template-columns: 1fr; }
+      .close { padding-bottom: 130px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+      .entrance { opacity: 1; transform: none; }
+      .reveal-word { color: var(--ink); }
+    }
+
+    .proto-picker {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 2147483647;
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      padding: 4px;
+      border-radius: 999px;
+      background: rgba(10, 10, 10, 0.82);
+      -webkit-backdrop-filter: blur(12px) saturate(1.4);
+      backdrop-filter: blur(12px) saturate(1.4);
+      box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.08) inset,
+        0 8px 24px rgba(0, 0, 0, 0.24),
+        0 2px 6px rgba(0, 0, 0, 0.12);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 13px;
+      line-height: 1;
+      -webkit-font-smoothing: antialiased;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .proto-picker-highlight {
+      position: absolute;
+      top: 4px;
+      left: 0;
+      height: 28px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.12);
+      will-change: transform;
+    }
+
+    .proto-picker[data-ready] .proto-picker-highlight {
+      transition:
+        transform 250ms cubic-bezier(0.23, 1, 0.32, 1),
+        width 250ms cubic-bezier(0.23, 1, 0.32, 1);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .proto-picker[data-ready] .proto-picker-highlight { transition: none; }
+    }
+
+    .proto-picker-item {
+      position: relative;
+      display: flex;
+      align-items: center;
+      height: 28px;
+      padding: 0 12px;
+      border: 0;
+      border-radius: 999px;
+      background: transparent;
+      color: rgba(255, 255, 255, 0.55);
+      font: inherit;
+      cursor: pointer;
+      transition: color 150ms ease-out;
+    }
+
+    .proto-picker-item:hover { color: rgba(255, 255, 255, 0.85); }
+    .proto-picker-item:active { transform: scale(0.97); }
+    .proto-picker-item:focus-visible { outline: 2px solid rgba(255, 255, 255, 0.4); outline-offset: 2px; }
+    .proto-picker-item[data-active] { color: #fff; }
+    .proto-picker-divider { width: 1px; height: 16px; margin: 0 4px; background: rgba(255, 255, 255, 0.12); }
+    .proto-picker-replay { padding: 0 10px; font-size: 14px; }
+    .proto-picker[data-position="top"] { bottom: auto; top: 24px; }
+  </style>
+</head>
+<body>
+  <main id="stage" aria-live="polite"></main>
+
+  <nav class="proto-picker" aria-label="Prototype variants">
+    <span class="proto-picker-highlight" aria-hidden="true"></span>
+    <button class="proto-picker-item" data-active aria-current="true">Foundry</button>
+    <button class="proto-picker-item">Ledger</button>
+    <button class="proto-picker-item">Beacon</button>
+    <span class="proto-picker-divider" aria-hidden="true"></span>
+    <button class="proto-picker-item proto-picker-replay" aria-label="Replay animation (R)">↻</button>
+  </nav>
+
+  <script>
+    const mark = `<svg class="nav-mark" viewBox="0 0 96 96" aria-hidden="true"><path fill="currentColor" d="M12 14h20v68H12zM64 14h20v68H64z"/><path fill="var(--mark-accent,currentColor)" d="M30 14h18l36 52v16H66L30 30z"/></svg>`;
+    const largeMark = `<svg class="mark-study" viewBox="0 0 96 96" role="img" aria-label="Protected path logo mark"><path fill="currentColor" d="M12 14h20v68H12zM64 14h20v68H64z"/><path fill="var(--mark-accent,currentColor)" d="M30 14h18l36 52v16H66L30 30z"/></svg>`;
+
+    const roles = [
+      { name: "Civilian", copy: "See what is verified, where danger is changing, and which route is currently recommended." },
+      { name: "Responder", copy: "Connect incident evidence, field conditions, assigned action, and route changes in one operational picture." },
+      { name: "Command", copy: "Track confidence, infrastructure, resource movement, and consequences without losing the human route through the event." }
+    ];
+
+    function navigation(direction) {
+      return `<div class="shell"><nav class="site-nav" aria-label="Direction preview navigation"><a class="nav-brand" href="#top">${mark}<span>NAVIRA</span></a><span class="nav-center">${direction}</span><button class="nav-action" data-jump="system">View system</button></nav></div>`;
+    }
+
+    function roleSwitcher() {
+      return `<section class="role-switcher"><div class="shell role-switcher-inner"><p class="role-copy">${roles[0].copy}</p><div class="role-controls" role="group" aria-label="Preview the visual language by user role">${roles.map((role, index) => `<button class="role-btn" aria-pressed="${index === 0}" data-role="${index}">${role.name}</button>`).join("")}</div></div></section>`;
+    }
+
+    function systemGrid(theme) {
+      const boards = {
+        signal: "assets/signal-foundry-brand-board.png",
+        terrain: "assets/terrain-ledger-brand-board.png",
+        beacon: "assets/night-beacon-brand-board.png"
+      };
+      const palettes = {
+        signal: ["#0f1113", "#ff3b1f", "#f1eee9", "#68737a", "#f4b800"],
+        terrain: ["#f0eee8", "#202624", "#ff5a16", "#68716c", "#c7b89e"],
+        beacon: ["#0b0d0d", "#c7ff18", "#f2f0e9", "#333738", "#ff493d"]
+      };
+      const copy = {
+        signal: ["Built to be recognized in one second", "Graphite structure. Vermilion movement. Bone-white clarity."],
+        terrain: ["Evidence stays attached to place", "Survey paper. Carbon ink. Rescue orange for the active path."],
+        beacon: ["One signal survives the noise", "Near-black structure. Reflective chartreuse for the active path."]
+      };
+      return `<section class="chapter" id="system"><div class="shell"><div class="chapter-intro"><h2 class="entrance" style="--i:1">${copy[theme][0]}</h2><p class="entrance" style="--i:2">${copy[theme][1]} Every element supports route, verification, responsibility, or state.</p></div><div class="system-grid"><article class="system-cell cell-primary"><div><h3>Protected path</h3><p>Two boundaries hold a clear route. The same mark works on maps, reports, equipment, and public guidance.</p></div>${largeMark}</article><article class="system-cell cell-wide"><h3>Disciplined color</h3><p>One active accent carries movement and attention. Caution and danger remain separate semantic states.</p><div class="swatches">${palettes[theme].map(color => `<span class="swatch" style="--swatch:${color}"></span>`).join("")}</div></article><article class="system-cell cell-accent"><h3>Urbanist</h3><p>Wide, direct, and readable at civic scale.</p></article><article class="system-cell"><h3>Icon direction</h3><p>Open, squared, and built for state recognition.</p><div class="icon-row"><span class="icon-sample">N</span><span class="icon-sample">↗</span><span class="icon-sample">✓</span></div></article><article class="system-cell cell-wide cell-image"><img src="${boards[theme]}" alt="${theme} NAVIRA brand system board"></article></div></div></section>`;
+    }
+
+    function story(theme, title, body) {
+      const boards = {
+        signal: "assets/signal-foundry-brand-board.png",
+        terrain: "assets/terrain-ledger-brand-board.png",
+        beacon: "assets/night-beacon-brand-board.png"
+      };
+      const words = title.split(" ").map(word => `<span class="reveal-word">${word}</span>`).join(" ");
+      return `<section class="story"><div class="shell story-layout"><div class="story-copy"><h2>${words}</h2><p>${body}</p></div><figure class="story-board"><img src="${boards[theme]}" alt="Full ${theme} brand board"><figcaption class="board-caption"><span>Generated brand reference</span><span>Exploration only</span></figcaption></figure></div></section>`;
+    }
+
+    function roleCarousel() {
+      return `<section class="role-carousel"><div class="shell"><div class="carousel-frame"><div class="carousel-index"><span>Illustrative role need</span><strong class="carousel-number">01</strong></div><div class="carousel-content"><div><h2 class="carousel-title">Tell me what is verified.</h2><p class="carousel-body">Civilian guidance begins with trust. The system separates official, corroborated, unverified, and changing information before asking for action.</p></div><div class="carousel-controls"><button class="carousel-button" data-carousel="prev" aria-label="Previous role">←</button><button class="carousel-button" data-carousel="next" aria-label="Next role">→</button></div></div></div></div></section>`;
+    }
+
+    function marquee() {
+      const items = ["Verified incident", "Dynamic route", "Responder dispatch", "Resource movement", "Infrastructure state", "Scenario simulation", "Timeline", "Decision analysis"];
+      const doubled = [...items, ...items];
+      return `<section class="marquee" aria-label="NAVIRA capability language"><div class="marquee-track">${doubled.map(item => `<span>${item}</span>`).join("")}</div></section>`;
+    }
+
+    function close(title, risk) {
+      return `<footer class="close"><div class="shell close-layout"><h2>${title}</h2><div class="close-note"><p>${risk}</p><a class="primary-action" href="../../BRAND_EXPLORATION.md">Read direction notes</a></div></div></footer>`;
+    }
+
+    function signalFoundry() {
+      return `<article class="prototype signal" id="top">${navigation("Signal Foundry")}<section class="hero shell"><div class="hero-copy"><div class="hero-top"><h1 class="entrance" style="--i:1">When conditions change,<br>every decision moves.</h1><p class="entrance" style="--i:2">NAVIRA turns verified disaster information into coordinated routes, assignments, and public guidance.</p><div class="hero-actions entrance" style="--i:3"><a class="primary-action" href="#system">Inspect the system</a><a class="secondary-action" href="assets/signal-foundry-brand-board.png">Open brand board</a></div></div></div><div class="hero-visual"><img src="assets/signal-foundry-brand-board.png" alt="Signal Foundry brand language"><div class="route-overlay"></div><svg class="route-line" viewBox="0 0 500 520" aria-hidden="true"><path d="M36 448C124 416 84 318 190 298S264 202 358 176 384 84 468 58" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="square"/><circle cx="36" cy="448" r="10" fill="currentColor"/><circle cx="468" cy="58" r="10" fill="currentColor"/></svg></div></section>${roleSwitcher()}${systemGrid("signal")}${story("signal", "Clarity moves first", "The system behaves like civic infrastructure: fixed enough to trust, responsive enough to change with the event. Route motion is the signature behavior, not decorative animation.")}${roleCarousel()}${marquee()}${close("Built for decisive coordination.", "Best when NAVIRA must feel authoritative, contemporary, and ready for command-scale use. The risk is excessive severity if vermilion appears without strict semantic control.")}</article>`;
+    }
+
+    function terrainLedger() {
+      return `<article class="prototype terrain" id="top">${navigation("Terrain Ledger")}<section class="hero shell"><div class="terrain-visual"><img src="assets/terrain-ledger-brand-board.png" alt="Terrain Ledger brand language"></div><div class="hero-copy"><div><h1 class="entrance" style="--i:1">Evidence follows the <span class="inline-terrain" aria-hidden="true"></span> ground.</h1><p class="entrance" style="--i:2">NAVIRA keeps reports, routes, responsibility, and changing conditions attached to the same geographic truth.</p></div><div class="hero-actions entrance" style="--i:3"><a class="primary-action" href="#system">Inspect the system</a><a class="secondary-action" href="assets/terrain-ledger-brand-board.png">Open brand board</a></div></div></section>${roleSwitcher()}${systemGrid("terrain")}${story("terrain", "Evidence into action", "This direction draws authority from field atlases, verified reports, and terrain itself. Motion opens layers of evidence like a map or report rather than sliding generic cards.")}${roleCarousel()}${marquee()}${close("Shared truth, mapped clearly.", "Best when NAVIRA must build civilian trust and carry naturally into maps, reports, and field materials. The risk is lower night-time intensity unless the operational dark extension is handled carefully.")}</article>`;
+    }
+
+    function nightBeacon() {
+      return `<article class="prototype beacon" id="top">${navigation("Night Beacon")}<section class="hero shell"><div class="beacon-grid"><div class="hero-copy"><div><h1 class="entrance" style="--i:1">One signal.<br><em>Clear action.</em></h1><p class="entrance" style="--i:2">A low-light visual system for verified guidance, active routes, and command decisions when conditions are noisy.</p></div><div class="hero-actions entrance" style="--i:3"><a class="primary-action" href="#system">Inspect the system</a><a class="secondary-action" href="assets/night-beacon-brand-board.png">Open brand board</a></div></div><aside class="signal-rail" aria-label="Signal hierarchy"><div class="signal-cell">Detect</div><div class="signal-cell">Verify</div><div class="signal-cell active">Route</div><div class="signal-cell">Act</div></aside><div class="beacon-bottom"><div class="broadcast-line" aria-hidden="true"></div><span>High contrast without decorative glow</span></div></div></section>${roleSwitcher()}${systemGrid("beacon")}${story("beacon", "One signal survives the noise", "The broadcast grid makes hierarchy immediate while chartreuse stays reserved for the live path. Information resolves in groups, then holds still for reading.")}${roleCarousel()}${marquee()}${close("Readable when the world is not.", "Best when NAVIRA must own low-light operations and become unmistakable at a distance. The risk is cyberpunk or retro-broadcast drift if chartreuse and raster texture lose semantic restraint.")}</article>`;
+    }
+
+    const variants = [signalFoundry, terrainLedger, nightBeacon];
+    const stage = document.getElementById("stage");
+    const picker = document.querySelector(".proto-picker");
+    const highlight = picker.querySelector(".proto-picker-highlight");
+    const items = [...picker.querySelectorAll(".proto-picker-item:not(.proto-picker-replay)")];
+    const replay = picker.querySelector(".proto-picker-replay");
+    let current = 0;
+    let scrollTriggers = [];
+
+    function moveHighlight() {
+      const el = items[current];
+      highlight.style.width = el.offsetWidth + "px";
+      highlight.style.transform = `translateX(${el.offsetLeft}px)`;
+    }
+
+    function destroyMotion() {
+      scrollTriggers.forEach(trigger => trigger.kill());
+      scrollTriggers = [];
+    }
+
+    function wirePrototype() {
+      document.querySelectorAll("[data-jump='system']").forEach(button => button.addEventListener("click", () => document.getElementById("system")?.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" })));
+      document.querySelectorAll(".role-btn").forEach(button => button.addEventListener("click", () => {
+        const index = Number(button.dataset.role);
+        document.querySelectorAll(".role-btn").forEach(candidate => candidate.setAttribute("aria-pressed", String(candidate === button)));
+        const copy = document.querySelector(".role-copy");
+        if (copy) copy.textContent = roles[index].copy;
+      }));
+
+      const roleSlides = [
+        ["01", "Tell me what is verified.", "Civilian guidance begins with trust. Separate official, corroborated, unverified, and changing information before asking for action."],
+        ["02", "Show me what changed.", "Responders need the route, infrastructure, evidence, and assignment delta without rereading the entire incident."],
+        ["03", "Make consequence visible.", "Command teams need resource decisions tied to the people, places, and dependencies those decisions affect."]
+      ];
+      let slide = 0;
+      function updateSlide() {
+        document.querySelector(".carousel-number").textContent = roleSlides[slide][0];
+        document.querySelector(".carousel-title").textContent = roleSlides[slide][1];
+        document.querySelector(".carousel-body").textContent = roleSlides[slide][2];
+      }
+      document.querySelectorAll("[data-carousel]").forEach(button => button.addEventListener("click", () => {
+        slide = button.dataset.carousel === "next" ? (slide + 1) % roleSlides.length : (slide - 1 + roleSlides.length) % roleSlides.length;
+        updateSlide();
+      }));
+
+      if (!window.gsap || !window.ScrollTrigger || matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        document.querySelectorAll(".reveal-word").forEach(word => word.style.color = "var(--ink)");
+        return;
+      }
+
+      gsap.registerPlugin(ScrollTrigger);
+      const copy = document.querySelector(".story-copy");
+      const board = document.querySelector(".story-board");
+      if (copy && board && innerWidth > 900) {
+        scrollTriggers.push(ScrollTrigger.create({ trigger: ".story-layout", start: "top 18%", end: "bottom 82%", pin: copy, pinSpacing: false }));
+      }
+      const words = gsap.utils.toArray(".reveal-word");
+      if (words.length) {
+        const tween = gsap.to(words, { color: "var(--ink)", stagger: .12, ease: "none", scrollTrigger: { trigger: ".story-copy h2", start: "top 75%", end: "bottom 38%", scrub: true } });
+        scrollTriggers.push(tween.scrollTrigger);
+      }
+      if (board) {
+        const tween = gsap.fromTo(board, { scale: .86, opacity: .42 }, { scale: 1, opacity: 1, ease: "none", scrollTrigger: { trigger: board, start: "top 90%", end: "center 58%", scrub: true } });
+        scrollTriggers.push(tween.scrollTrigger);
+      }
+    }
+
+    function mount(i) {
+      destroyMotion();
+      stage.innerHTML = "";
+      window.scrollTo({ top: 0, behavior: "auto" });
+      requestAnimationFrame(() => {
+        stage.innerHTML = variants[i]();
+        document.body.style.background = getComputedStyle(stage.firstElementChild).getPropertyValue("--surface");
+        wirePrototype();
+      });
+    }
+
+    function setActive(i) {
+      if (i < 0 || i >= variants.length) return;
+      current = i;
+      items.forEach((el, j) => {
+        el.toggleAttribute("data-active", j === i);
+        if (j === i) el.setAttribute("aria-current", "true");
+        else el.removeAttribute("aria-current");
+      });
+      moveHighlight();
+      const url = new URL(location);
+      url.searchParams.set("v", i + 1);
+      history.replaceState(null, "", url);
+      mount(i);
+    }
+
+    items.forEach((el, i) => el.addEventListener("click", () => setActive(i)));
+    replay.addEventListener("click", () => mount(current));
+    window.addEventListener("resize", moveHighlight);
+
+    document.addEventListener("keydown", (e) => {
+      if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable) return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const num = parseInt(e.key, 10);
+      if (num >= 1 && num <= variants.length) setActive(num - 1);
+      else if (e.key === "ArrowRight") setActive((current + 1) % variants.length);
+      else if (e.key === "ArrowLeft") setActive((current - 1 + variants.length) % variants.length);
+      else if (e.key === "r" || e.key === "R") mount(current);
+    });
+
+    setActive((parseInt(new URLSearchParams(location.search).get("v"), 10) || 1) - 1);
+    requestAnimationFrame(() => requestAnimationFrame(() => picker.setAttribute("data-ready", "")));
+  </script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-labelledby="title desc">
+  <title id="title">NAVIRA protected path mark</title>
+  <desc id="desc">Two structural planes form an N around a clear diagonal route.</desc>
+  <path fill="currentColor" d="M12 14h20v68H12zM64 14h20v68H64z"/>
+  <path fill="var(--mark-accent, currentColor)" d="M30 14h18l36 52v16H66L30 30z"/>
+  <path fill="var(--mark-cut, transparent)" d="M48 46l16 22V46L48 24z"/>
+</svg>

@@ -1,0 +1,143 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-25T21:52:58.8595957+05:30",
+  "title": "Design System: NAVIRA Signal Foundry",
+  "extensions": {
+    "colorMeta": {
+      "graphite": { "role": "neutral", "displayName": "Graphite", "canonical": "#0f1113", "tonalRamp": ["oklch(15% 0.006 240)", "oklch(25% 0.006 240)", "oklch(37% 0.006 240)", "oklch(49% 0.006 240)", "oklch(61% 0.006 240)", "oklch(73% 0.006 240)", "oklch(85% 0.006 240)", "oklch(95% 0.006 240)"] },
+      "ink": { "role": "neutral", "displayName": "Ink", "canonical": "#191c1f", "tonalRamp": ["oklch(15% 0.008 240)", "oklch(25% 0.008 240)", "oklch(37% 0.008 240)", "oklch(49% 0.008 240)", "oklch(61% 0.008 240)", "oklch(73% 0.008 240)", "oklch(85% 0.008 240)", "oklch(95% 0.008 240)"] },
+      "bone": { "role": "neutral", "displayName": "Bone", "canonical": "#f1eee9", "tonalRamp": ["oklch(15% 0.012 75)", "oklch(25% 0.012 75)", "oklch(37% 0.012 75)", "oklch(49% 0.012 75)", "oklch(61% 0.012 75)", "oklch(73% 0.012 75)", "oklch(85% 0.012 75)", "oklch(95% 0.012 75)"] },
+      "paper": { "role": "neutral", "displayName": "Paper", "canonical": "#faf8f4", "tonalRamp": ["oklch(15% 0.009 75)", "oklch(25% 0.009 75)", "oklch(37% 0.009 75)", "oklch(49% 0.009 75)", "oklch(61% 0.009 75)", "oklch(73% 0.009 75)", "oklch(85% 0.009 75)", "oklch(95% 0.009 75)"] },
+      "signal-vermilion": { "role": "primary", "displayName": "Signal Vermilion", "canonical": "#ff3b1f", "tonalRamp": ["oklch(15% 0.19 32)", "oklch(25% 0.19 32)", "oklch(37% 0.19 32)", "oklch(49% 0.19 32)", "oklch(61% 0.19 32)", "oklch(73% 0.19 32)", "oklch(85% 0.19 32)", "oklch(95% 0.19 32)"] },
+      "signal-ink": { "role": "primary", "displayName": "Signal Ink", "canonical": "#a52210", "tonalRamp": ["oklch(15% 0.14 32)", "oklch(25% 0.14 32)", "oklch(37% 0.14 32)", "oklch(49% 0.14 32)", "oklch(61% 0.14 32)", "oklch(73% 0.14 32)", "oklch(85% 0.14 32)", "oklch(95% 0.14 32)"] },
+      "safety-amber": { "role": "secondary", "displayName": "Safety Amber", "canonical": "#f4b800", "tonalRamp": ["oklch(15% 0.14 85)", "oklch(25% 0.14 85)", "oklch(37% 0.14 85)", "oklch(49% 0.14 85)", "oklch(61% 0.14 85)", "oklch(73% 0.14 85)", "oklch(85% 0.14 85)", "oklch(95% 0.14 85)"] },
+      "steel": { "role": "neutral", "displayName": "Steel", "canonical": "#68737a", "tonalRamp": ["oklch(15% 0.018 230)", "oklch(25% 0.018 230)", "oklch(37% 0.018 230)", "oklch(49% 0.018 230)", "oklch(61% 0.018 230)", "oklch(73% 0.018 230)", "oklch(85% 0.018 230)", "oklch(95% 0.018 230)"] },
+      "rule": { "role": "neutral", "displayName": "Rule Gray", "canonical": "#cbc7c0", "tonalRamp": ["oklch(15% 0.01 75)", "oklch(25% 0.01 75)", "oklch(37% 0.01 75)", "oklch(49% 0.01 75)", "oklch(61% 0.01 75)", "oklch(73% 0.01 75)", "oklch(85% 0.01 75)", "oklch(95% 0.01 75)"] },
+      "white": { "role": "neutral", "displayName": "White", "canonical": "#ffffff", "tonalRamp": ["oklch(15% 0 0)", "oklch(25% 0 0)", "oklch(37% 0 0)", "oklch(49% 0 0)", "oklch(61% 0 0)", "oklch(73% 0 0)", "oklch(85% 0 0)", "oklch(95% 0 0)"] },
+      "verified-green": { "role": "secondary", "displayName": "Verified Green", "canonical": "#15775a", "tonalRamp": ["oklch(15% 0.09 165)", "oklch(25% 0.09 165)", "oklch(37% 0.09 165)", "oklch(49% 0.09 165)", "oklch(61% 0.09 165)", "oklch(73% 0.09 165)", "oklch(85% 0.09 165)", "oklch(95% 0.09 165)"] },
+      "app-canvas": { "role": "neutral", "displayName": "App Canvas", "canonical": "#e8e5df", "tonalRamp": ["oklch(15% 0.009 75)", "oklch(25% 0.009 75)", "oklch(37% 0.009 75)", "oklch(49% 0.009 75)", "oklch(61% 0.009 75)", "oklch(73% 0.009 75)", "oklch(85% 0.009 75)", "oklch(95% 0.009 75)"] },
+      "audit-surface": { "role": "neutral", "displayName": "Audit Surface", "canonical": "#e2ded6", "tonalRamp": ["oklch(15% 0.012 75)", "oklch(25% 0.012 75)", "oklch(37% 0.012 75)", "oklch(49% 0.012 75)", "oklch(61% 0.012 75)", "oklch(73% 0.012 75)", "oklch(85% 0.012 75)", "oklch(95% 0.012 75)"] },
+      "receipt-surface": { "role": "secondary", "displayName": "Receipt Surface", "canonical": "#dce9df", "tonalRamp": ["oklch(15% 0.035 155)", "oklch(25% 0.035 155)", "oklch(37% 0.035 155)", "oklch(49% 0.035 155)", "oklch(61% 0.035 155)", "oklch(73% 0.035 155)", "oklch(85% 0.035 155)", "oklch(95% 0.035 155)"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Cinematic Display", "purpose": "Centered two-line landing proposition only." },
+      "headline": { "displayName": "Operational Headline", "purpose": "Compressed task introductions that preserve working space." },
+      "title": { "displayName": "Title", "purpose": "Panel titles and incident names." },
+      "body": { "displayName": "Body", "purpose": "Guidance, evidence notes, and explanatory copy." },
+      "label": { "displayName": "Micro Label", "purpose": "Response-loop groups, rails, legends, and audit fields." }
+    },
+    "shadows": [
+      { "name": "signal-edge", "value": "inset 0 5px 0 var(--signal)", "purpose": "Connect an incident plate to the active signal system." },
+      { "name": "audit-edge", "value": "inset 4px 0 0 var(--signal)", "purpose": "Mark the latest persistent audit record." },
+      { "name": "receipt-edge", "value": "inset 4px 0 0 var(--green)", "purpose": "Confirm a durable action." },
+      { "name": "civilian-device-offset", "value": "18px 18px 0 var(--graphite)", "purpose": "Frame public guidance; reduce to 9px on mobile." },
+      { "name": "mobile-navigation-cast", "value": "14px 0 40px rgba(0,0,0,.3)", "purpose": "Separate the open mobile drawer." }
+    ],
+    "motion": [
+      { "name": "ease-system", "value": "cubic-bezier(.22, 1, .36, 1)", "purpose": "Mechanical selection settle." },
+      { "name": "ease-out", "value": "cubic-bezier(.23, 1, .32, 1)", "purpose": "Buttons, disclosure, receipts, panels, and toast entry." },
+      { "name": "ease-in-out", "value": "cubic-bezier(.77, 0, .175, 1)", "purpose": "Controlled simulation pulse." },
+      { "name": "ease-drawer", "value": "cubic-bezier(.32, .72, 0, 1)", "purpose": "Mobile navigation." },
+      { "name": "button-response", "value": "140ms transform / 160ms color / 120ms active", "purpose": "Tactile control feedback." },
+      { "name": "drawer-handoff", "value": "240ms", "purpose": "Off-canvas navigation." },
+      { "name": "panel-handoff", "value": "200ms", "purpose": "Evidence and ledger details." },
+      { "name": "receipt-handoff", "value": "220ms entry / 160ms toast exit", "purpose": "Action records and status notices." },
+      { "name": "hero-copy", "value": "800ms / 70ms stagger / power3.out", "purpose": "Centered proposition reveal." },
+      { "name": "hero-image", "value": "1.2s / power3.out", "purpose": "Image resolution from 1.06 scale." },
+      { "name": "route-trace", "value": "1.6s / 450ms delay / power2.inOut", "purpose": "Source-to-destination route draw." },
+      { "name": "scroll-frame", "value": "scale 1 to .96 / opacity 1 to .72 / scrub", "purpose": "Recede the command frame during scroll." },
+      { "name": "stack-card", "value": "28px / scale .985 / opacity .82 / power3.out", "purpose": "Introduce connected public sections." },
+      { "name": "signal-pulse", "value": "1.8s var(--ease-in-out) infinite", "purpose": "Running simulation boundary only." },
+      { "name": "reduced-motion", "value": "none for transforms, drawer, route, pulse, and loading", "purpose": "Preserve information without nonessential movement." }
+    ],
+    "breakpoints": [
+      { "name": "compact-desktop", "value": "1180px" },
+      { "name": "mobile", "value": "820px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Signal Button", "kind": "button", "refersTo": "button-signal",
+      "description": "Direct-action control for issuing or publishing a response step.",
+      "html": "<button class=\"ds-btn-signal\">PUBLISH ROUTE →</button>",
+      "css": ".ds-btn-signal{min-height:46px;padding:0 18px;border:1px solid transparent;border-radius:0;background:var(--signal,#ff3b1f);color:var(--graphite,#0f1113);font:720 1rem 'Urbanist Variable','Google Sans',Arial,sans-serif;cursor:pointer;transition:transform 140ms cubic-bezier(.23,1,.32,1),background-color 160ms ease,color 160ms ease}.ds-btn-signal:active{transform:scale(.98);transition-duration:120ms}.ds-btn-signal:focus-visible{outline:3px solid var(--amber,#f4b800);outline-offset:3px}"
+    },
+    {
+      "name": "Response Loop Navigation", "kind": "nav",
+      "description": "Persistent Observe, Act, Assure, and Output operational navigation.",
+      "html": "<nav class=\"ds-loop\"><div><span>OBSERVE</span><button class=\"ds-active\">COMMAND</button><button>LIVE MAP</button></div><div><span>ACT</span><button>EVACUATION</button></div><div><span>ASSURE</span><button>ANALYTICS</button></div><div class=\"ds-output\"><span>OUTPUT</span><button>CIVILIAN GUIDANCE</button></div></nav>",
+      "css": ".ds-loop{width:220px;padding:16px 10px;display:grid;gap:14px;background:var(--graphite,#0f1113);color:#a9afb2;font-family:'Urbanist Variable','Google Sans',Arial,sans-serif}.ds-loop>div{display:grid;gap:2px}.ds-loop span{padding:0 10px 7px;color:#757d81;font-size:.55rem;font-weight:800;letter-spacing:.16em}.ds-loop button{min-height:42px;padding:0 10px;border:0;border-radius:0;background:transparent;color:inherit;text-align:left;font-size:.72rem}.ds-loop button.ds-active{background:var(--signal,#ff3b1f);color:var(--graphite,#0f1113)}.ds-loop .ds-output{padding-top:14px;border-top:1px solid #34383b}.ds-loop button:focus-visible{outline:3px solid var(--amber,#f4b800);outline-offset:-3px}"
+    },
+    {
+      "name": "Persistent Incident Ribbon", "kind": "custom",
+      "description": "Cross-module incident identity, response phase, and latest audit record.",
+      "html": "<section class=\"ds-ribbon\"><div><span>ACTIVE INCIDENT</span><b>NV-2841 · Flash flood</b><small>CRITICAL</small></div><div><span>RESPONSE PHASE</span><b>Decision issued</b><small>Verified 14:32 · confidence high</small></div><div class=\"ds-record\"><span>LATEST AUDIT RECORD</span><b>Boundary verified</b><small>A. Kapoor · 14:32</small></div></section>",
+      "css": ".ds-ribbon{min-height:76px;display:grid;grid-template-columns:1fr 1fr 1.3fr;background:var(--paper,#faf8f4);border-bottom:1px solid var(--graphite,#0f1113);font-family:'Urbanist Variable','Google Sans',Arial,sans-serif}.ds-ribbon>div{padding:12px 18px;display:grid;align-content:center;gap:3px;border-right:1px solid var(--line,#cbc7c0)}.ds-ribbon span{color:var(--steel,#68737a);font-size:.55rem;font-weight:800;letter-spacing:.13em}.ds-ribbon b{font-size:.8rem}.ds-ribbon small{color:var(--steel,#68737a);font-size:.66rem}.ds-ribbon .ds-record{background:#e2ded6;box-shadow:inset 4px 0 0 var(--signal,#ff3b1f)}"
+    },
+    {
+      "name": "Mobile Critical Status Rail", "kind": "custom", "refersTo": "mobile-status",
+      "description": "Compact mobile-only severity, sync, and connectivity context.",
+      "html": "<div class=\"ds-mobile-status\"><b>● LEVEL 4</b><span>SYNCED 14:32</span><span>NETWORK ONLINE</span></div>",
+      "css": ".ds-mobile-status{min-height:42px;padding:0 14px;display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--graphite,#0f1113);color:var(--white,#fff);font:750 .63rem 'Urbanist Variable','Google Sans',Arial,sans-serif}.ds-mobile-status b{color:var(--white,#fff)}.ds-mobile-status b::first-letter{color:var(--signal,#ff3b1f)}"
+    },
+    {
+      "name": "Durable Action Receipt", "kind": "card", "refersTo": "action-receipt",
+      "description": "Recorded action with actor/time metadata, outcome, persistence, and supersede control.",
+      "html": "<section class=\"ds-receipt\" aria-live=\"polite\"><b>✓</b><div><strong>Route E-04 issued</strong><span>A. Kapoor · 14:34 · expires 15:10</span></div><div><strong>12,710 devices · 96.2% delivery</strong><small>Persistent audit record</small></div><button>Supersede</button></section>",
+      "css": ".ds-receipt{min-height:70px;padding:12px 16px;display:grid;grid-template-columns:26px 1.1fr 1fr auto;align-items:center;gap:16px;background:#dce9df;border:1px solid var(--graphite,#0f1113);box-shadow:inset 4px 0 0 var(--green,#15775a);font-family:'Urbanist Variable','Google Sans',Arial,sans-serif;transition:opacity 220ms cubic-bezier(.23,1,.32,1),transform 220ms cubic-bezier(.23,1,.32,1)}.ds-receipt>div{display:grid;gap:3px}.ds-receipt span,.ds-receipt small{color:#536059;font-size:.67rem}.ds-receipt button{min-height:44px;padding:0 12px;border:1px solid var(--graphite,#0f1113);border-radius:0;background:transparent;font-weight:750}.ds-receipt button:focus-visible{outline:3px solid var(--amber,#f4b800);outline-offset:3px}"
+    },
+    {
+      "name": "Evidence Ledger Row", "kind": "card",
+      "description": "Ruled record preserving incident, state, place, evidence, and time.",
+      "html": "<button class=\"ds-ledger\" aria-expanded=\"false\"><b>NV-2841</b><strong>Boundary breach</strong><span>SOUTHBANK C</span><span>18 reports · Verified</span><time>14:32</time><i>⌄</i></button>",
+      "css": ".ds-ledger{width:100%;min-height:80px;padding:12px 16px;display:grid;grid-template-columns:150px 1.2fr 1fr 1fr 80px 30px;gap:12px;align-items:center;border:0;border-bottom:1px solid var(--line,#cbc7c0);border-radius:0;background:var(--paper,#faf8f4);color:var(--graphite,#0f1113);text-align:left;font:480 .8rem 'Urbanist Variable','Google Sans',Arial,sans-serif}.ds-ledger span{color:var(--steel,#68737a)}.ds-ledger:hover{background:#ece9e3}.ds-ledger:focus-visible{outline:3px solid var(--amber,#f4b800);outline-offset:3px}"
+    },
+    {
+      "name": "Accessible Threshold Chart", "kind": "custom",
+      "description": "Chart with interpretation, visible threshold, semantic summary, and table-equivalent data.",
+      "html": "<section class=\"ds-chart\"><h3>Demand is falling after the 13:30 peak.</h3><p>Action threshold: 70 reports per interval.</p><div class=\"ds-frame\"><div class=\"ds-scale\"><span>100</span><span>70 threshold</span><span>0</span></div><div class=\"ds-bars\" role=\"img\" aria-label=\"Incident volume peaked at 91 reports\"><i></i><b style=\"height:44%\"></b><b style=\"height:70%\"></b><b class=\"ds-peak\" style=\"height:91%\"></b><b style=\"height:58%\"></b></div></div><table class=\"ds-sr\"><caption>Incident volume values</caption><tbody><tr><th>13:30</th><td>91 reports</td></tr></tbody></table></section>",
+      "css": ".ds-chart{padding:22px;border:1px solid var(--graphite,#0f1113);background:var(--paper,#faf8f4);font-family:'Urbanist Variable','Google Sans',Arial,sans-serif}.ds-chart p{color:var(--steel,#68737a);font-size:.78rem}.ds-frame{margin-top:22px;display:grid;grid-template-columns:64px 1fr}.ds-scale{height:240px;padding-right:10px;display:flex;flex-direction:column;justify-content:space-between;color:var(--steel,#68737a);font-size:.58rem;text-align:right}.ds-bars{height:240px;display:flex;align-items:flex-end;gap:8px;position:relative;border-bottom:1px solid var(--graphite,#0f1113)}.ds-bars>b{flex:1;background:var(--graphite,#0f1113)}.ds-bars>b.ds-peak{background:var(--signal,#ff3b1f)}.ds-bars>i{position:absolute;left:0;right:0;bottom:70%;border-top:1px dashed var(--signal-ink,#a52210)}.ds-sr{position:absolute!important;width:1px!important;height:1px!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important}"
+    },
+    {
+      "name": "Protected-Path Mark", "kind": "custom",
+      "description": "Two boundary planes forming an N around one signal route.",
+      "html": "<span class=\"ds-mark\"><svg viewBox=\"0 0 42 42\"><path d=\"M4 38V4h7l20 23V4h7v34h-7L11 15v23z\" fill=\"currentColor\"/><path d=\"M11 7l20 23\" stroke=\"var(--signal,#ff3b1f)\" stroke-width=\"3.5\"/></svg><strong>NAVIRA</strong></span>",
+      "css": ".ds-mark{display:inline-flex;align-items:center;gap:11px;color:var(--graphite,#0f1113);font:700 1rem 'Urbanist Variable','Google Sans',Arial,sans-serif;letter-spacing:.16em}.ds-mark svg{width:30px;height:30px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Signal Foundry",
+    "overview": "NAVIRA behaves like civic signal infrastructure built into a city: hard-edged, legible under pressure, and visibly connected from observation to action, assurance, and public output. The redesign preserves the protected-path N, Urbanist, graphite command surfaces, bone field surfaces, signal vermilion, and the language of routes, rails, ledgers, bands, and boundaries.\n\nThe public landing surface is cinematic and centered. One oversized two-line proposition gives way to a full-width disaster frame, while a tightly cropped inline photo fragment turns environmental context into punctuation inside the editorial story. The operational product is denser and quieter: compressed headers, a persistent incident ribbon, grouped response-loop navigation, durable receipts, and explicit audit language keep the current event and the result of each action visible across modules.",
+    "keyCharacteristics": [
+      "A centered cinematic landing sequence with environmental photography used as evidence, not decoration.",
+      "A 36-column-equivalent system grid assembled from durable 5/3/4 proportions.",
+      "Observe, Act, Assure, and Output as the persistent information architecture.",
+      "Incident identity, response phase, and latest audit record visible across operational modules.",
+      "Square ruled surfaces, accessible state redundancy, and restrained state-based motion."
+    ],
+    "rules": [
+      { "name": "The Signal Has a Job Rule", "body": "Vermilion marks an active route, direct action, current selection, or critical field; signal ink carries the same family where small text needs stronger contrast.", "section": "colors" },
+      { "name": "The Redundant State Rule", "body": "Never communicate emergency meaning with hue alone. Pair color with a plain label and, where useful, a dot, icon, threshold, boundary pattern, or receipt state.", "section": "colors" },
+      { "name": "The Broad Signal Rule", "body": "Use the oversized display only for one decisive public proposition; use compressed operational headings to preserve working space.", "section": "typography" },
+      { "name": "The Numeric Integrity Rule", "body": "Times, quantities, telemetry, thresholds, and response metrics use tabular numerals so changing values do not disturb alignment.", "section": "typography" },
+      { "name": "The Connected Instrument Rule", "body": "Map, ledger, route, resource, audit, and receipt regions share borders and alignment so the interface reads as one operating picture.", "section": "layout" },
+      { "name": "The Flat Command Rule", "body": "Operational surfaces remain flat at rest; use rules, fills, and inset state edges before a cast shadow.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do preserve the protected-path mark, exact Signal Foundry palette, Urbanist, hard rules, and square geometry.",
+      "Do use the centered hero, inline photo fragment, and 36-column-equivalent grid as the public composition grammar.",
+      "Do organize every operational module within Observe, Act, Assure, or Output.",
+      "Do keep incident, response phase, result, actor, time, expiry, and audit state visible after consequential actions.",
+      "Do pair charts with interpretation, thresholds, accessible summaries, and underlying table values.",
+      "Do preserve 44px targets, focus visibility, keyboard drawer behavior, redundant state, and reduced-motion equivalents."
+    ],
+    "donts": [
+      "Don't introduce gradients, glow, glassmorphism, translucent floating layers, or soft card stacks.",
+      "Don't use vermilion as ambient decoration or use signal vermilion for small text where signal ink is required.",
+      "Don't let navigation labels, the incident ribbon, or receipts disappear in favor of icon-only compression.",
+      "Don't animate static reading content continuously; reserve repeating motion for a running simulation.",
+      "Don't replace ledgers, rails, route spines, thresholds, and audit records with generic icon-card grids.",
+      "Don't add shields, crosses, sirens, heartbeats, radar, or lightning motifs to the protected-path mark."
+    ]
+  }
+}

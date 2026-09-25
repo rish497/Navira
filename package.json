@@ -1,0 +1,27 @@
+{
+  "name": "navira-response-platform",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "vite build",
+    "preview": "vite preview --host 0.0.0.0"
+  },
+  "dependencies": {
+    "@fontsource-variable/urbanist": "latest",
+    "@gsap/react": "latest",
+    "@phosphor-icons/react": "latest",
+    "dot-globe": "^1.5.3",
+    "gsap": "latest",
+    "maplibre-gl": "^6.11.2",
+    "react": "latest",
+    "react-dom": "latest",
+    "react-router-dom": "latest"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "latest",
+    "playwright-core": "^1.63.0",
+    "vite": "latest"
+  }
+}

@@ -1,0 +1,7 @@
+node_modules/
+dist/
+qa/*.png
+qa/chrome-*/
+.vite/
+.env*
+!.env.example

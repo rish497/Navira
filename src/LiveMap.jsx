@@ -1,0 +1,255 @@
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { AttributionControl, LngLatBounds, Map, NavigationControl, ScaleControl, setWorkerUrl } from 'maplibre-gl';
+import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
+import 'maplibre-gl/dist/maplibre-gl.css';
+import { Crosshair, Eye, EyeSlash, SpinnerGap } from '@phosphor-icons/react';
+
+setWorkerUrl(workerUrl);
+
+const MAP_STYLE = 'https://tiles.openfreemap.org/styles/liberty';
+const SOURCE_COLORS = { eonet: '#74a7b9', gdacs: '#ff5537', usgs: '#f0c457' };
+const BASE_FILTERS = {
+  'event-polygons': ['in', ['geometry-type'], ['literal', ['Polygon', 'MultiPolygon']]],
+  'event-polygon-outline': ['in', ['geometry-type'], ['literal', ['Polygon', 'MultiPolygon']]],
+  'event-lines': ['in', ['geometry-type'], ['literal', ['LineString', 'MultiLineString']]],
+  'event-points-halo': ['in', ['geometry-type'], ['literal', ['Point', 'MultiPoint']]],
+  'event-points': ['in', ['geometry-type'], ['literal', ['Point', 'MultiPoint']]],
+};
+
+function eventCollection(events) {
+  return {
+    type: 'FeatureCollection',
+    features: events.map((event) => ({
+      type: 'Feature',
+      id: event.id,
+      geometry: event.geometry,
+      properties: {
+        eventId: event.id,
+        sourceId: event.source.id,
+        title: event.title,
+        type: event.type,
+        severity: event.severity,
+        status: event.status,
+        color: SOURCE_COLORS[event.source.id] || '#d7dcde',
+      },
+    })),
+  };
+}
+
+function coordinatesOf(geometry) {
+  if (!geometry?.coordinates) return [];
+  const result = [];
+  const walk = (value) => {
+    if (Array.isArray(value) && value.length >= 2 && typeof value[0] === 'number' && typeof value[1] === 'number') {
+      result.push([value[0], value[1]]);
+      return;
+    }
+    if (Array.isArray(value)) value.forEach(walk);
+  };
+  walk(geometry.coordinates);
+  return result.filter(([lng, lat]) => Number.isFinite(lng) && Number.isFinite(lat) && Math.abs(lng) <= 180 && Math.abs(lat) <= 90);
+}
+
+function fitGeometry(map, geometry, options = {}) {
+  const coordinates = coordinatesOf(geometry);
+  if (!coordinates.length) return;
+  if (coordinates.length === 1) {
+    map.easeTo({ center: coordinates[0], zoom: options.zoom || 6, duration: 850 });
+    return;
+  }
+  const bounds = coordinates.reduce((box, coordinate) => box.extend(coordinate), new LngLatBounds(coordinates[0], coordinates[0]));
+  map.fitBounds(bounds, { padding: options.padding || 90, maxZoom: options.maxZoom || 8, duration: 850 });
+}
+
+async function fetchBoundary(event) {
+  if (!event?.gdacsKey?.episodeid) return null;
+  const params = new URLSearchParams(event.gdacsKey);
+  const response = await fetch(`/api/gdacs-geometry?${params}`, { cache: 'no-store' });
+  if (!response.ok) return null;
+  const payload = await response.json();
+  const data = payload.data;
+  if (data?.type === 'FeatureCollection') return { collection: data, fetchedAt: payload.fetchedAt };
+  if (data?.type === 'Feature') return { collection: { type: 'FeatureCollection', features: [data] }, fetchedAt: payload.fetchedAt };
+  if (data?.type && data?.coordinates) return { collection: { type: 'FeatureCollection', features: [{ type: 'Feature', properties: {}, geometry: data }] }, fetchedAt: payload.fetchedAt };
+  return null;
+}
+
+function freshnessLabel(value) {
+  if (!value) return null;
+  return new Intl.DateTimeFormat('en', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC', timeZoneName: 'short' }).format(new Date(value));
+}
+
+export default function LiveMap({ events, selectedEvent, onSelect, variant = 'workspace' }) {
+  const containerRef = useRef(null);
+  const mapRef = useRef(null);
+  const [ready, setReady] = useState(false);
+  const [visibility, setVisibility] = useState({ eonet: true, gdacs: true, usgs: true });
+  const [boundaryState, setBoundaryState] = useState('idle');
+  const [boundaryFetchedAt, setBoundaryFetchedAt] = useState(null);
+  const collection = useMemo(() => eventCollection(events), [events]);
+  const collectionRef = useRef(collection);
+  const onSelectRef = useRef(onSelect);
+  const hasFocusedRef = useRef(false);
+
+  useEffect(() => { collectionRef.current = collection; }, [collection]);
+  useEffect(() => { onSelectRef.current = onSelect; }, [onSelect]);
+
+  useEffect(() => {
+    if (!containerRef.current || mapRef.current) return undefined;
+    const map = new Map({
+      container: containerRef.current,
+      style: MAP_STYLE,
+      center: [12, 18],
+      zoom: 1.55,
+      minZoom: 1,
+      maxZoom: 16,
+      attributionControl: false,
+      cooperativeGestures: true,
+    });
+    mapRef.current = map;
+    map.addControl(new NavigationControl({ visualizePitch: true }), 'top-right');
+    map.addControl(new ScaleControl({ maxWidth: 110, unit: 'metric' }), 'bottom-left');
+    map.addControl(new AttributionControl({ compact: true, customAttribution: 'Live event data: NASA EONET · GDACS · USGS' }));
+
+    map.once('style.load', () => {
+      map.addSource('navira-events', { type: 'geojson', data: collectionRef.current, promoteId: 'eventId' });
+      map.addSource('gdacs-boundary', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+      map.addSource('verified-routes', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+
+      map.addLayer({
+        id: 'event-polygons', type: 'fill', source: 'navira-events',
+        filter: BASE_FILTERS['event-polygons'],
+        paint: { 'fill-color': ['get', 'color'], 'fill-opacity': 0.18 },
+      });
+      map.addLayer({
+        id: 'event-polygon-outline', type: 'line', source: 'navira-events',
+        filter: BASE_FILTERS['event-polygon-outline'],
+        paint: { 'line-color': ['get', 'color'], 'line-width': 2, 'line-opacity': 0.9 },
+      });
+      map.addLayer({
+        id: 'event-lines', type: 'line', source: 'navira-events',
+        filter: BASE_FILTERS['event-lines'],
+        paint: { 'line-color': ['get', 'color'], 'line-width': 3, 'line-opacity': 0.82 },
+      });
+      map.addLayer({
+        id: 'event-points-halo', type: 'circle', source: 'navira-events',
+        filter: BASE_FILTERS['event-points-halo'],
+        paint: { 'circle-radius': 11, 'circle-color': ['get', 'color'], 'circle-opacity': 0.18 },
+      });
+      map.addLayer({
+        id: 'event-points', type: 'circle', source: 'navira-events',
+        filter: BASE_FILTERS['event-points'],
+        paint: {
+          'circle-radius': ['interpolate', ['linear'], ['zoom'], 1, 4, 7, 8],
+          'circle-color': ['get', 'color'],
+          'circle-stroke-color': '#101315', 'circle-stroke-width': 2,
+        },
+      });
+      map.addLayer({
+        id: 'gdacs-boundary-fill', type: 'fill', source: 'gdacs-boundary',
+        paint: { 'fill-color': '#ff5537', 'fill-opacity': 0.12 },
+      });
+      map.addLayer({
+        id: 'gdacs-boundary-line', type: 'line', source: 'gdacs-boundary',
+        paint: { 'line-color': '#ff5537', 'line-width': 2.5, 'line-dasharray': [2, 1] },
+      });
+      map.addLayer({
+        id: 'verified-routes-line', type: 'line', source: 'verified-routes',
+        paint: { 'line-color': '#d7dcde', 'line-width': 4 },
+      });
+
+      ['event-points', 'event-lines', 'event-polygons'].forEach((layer) => {
+        map.on('click', layer, (event) => {
+          const id = event.features?.[0]?.properties?.eventId;
+          const selected = collectionRef.current.features.find((feature) => feature.properties.eventId === id);
+          if (selected) onSelectRef.current?.(id);
+        });
+        map.on('mouseenter', layer, () => { map.getCanvas().style.cursor = 'pointer'; });
+        map.on('mouseleave', layer, () => { map.getCanvas().style.cursor = ''; });
+      });
+      setReady(true);
+    });
+
+    const resizeObserver = new ResizeObserver(() => map.resize());
+    resizeObserver.observe(containerRef.current);
+    return () => {
+      resizeObserver.disconnect();
+      map.remove();
+      mapRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!ready || !map?.getSource('navira-events')) return;
+    map.getSource('navira-events').setData(collection);
+  }, [collection, ready]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!ready || !map) return;
+    const visible = Object.entries(visibility).filter(([, enabled]) => enabled).map(([id]) => id);
+    const filter = ['in', ['get', 'sourceId'], ['literal', visible]];
+    Object.keys(BASE_FILTERS).forEach((id) => {
+      if (map.getLayer(id)) map.setFilter(id, ['all', BASE_FILTERS[id], filter]);
+    });
+  }, [visibility, ready, collection]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!ready || !map || !selectedEvent) return;
+    if (!hasFocusedRef.current) {
+      hasFocusedRef.current = true;
+      return;
+    }
+    fitGeometry(map, selectedEvent.geometry);
+    const boundarySource = map.getSource('gdacs-boundary');
+    boundarySource?.setData({ type: 'FeatureCollection', features: [] });
+    setBoundaryFetchedAt(null);
+    if (!selectedEvent.gdacsKey) {
+      setBoundaryState('unavailable');
+      return;
+    }
+    let active = true;
+    setBoundaryState('loading');
+    fetchBoundary(selectedEvent).then((boundary) => {
+      if (!active) return;
+      if (boundary?.collection?.features?.length) {
+        boundarySource?.setData(boundary.collection);
+        setBoundaryFetchedAt(boundary.fetchedAt);
+        setBoundaryState('available');
+      } else {
+        setBoundaryState('unavailable');
+      }
+    }).catch(() => active && setBoundaryState('unavailable'));
+    return () => { active = false; };
+  }, [selectedEvent, ready]);
+
+  const toggle = (id) => setVisibility((current) => ({ ...current, [id]: !current[id] }));
+
+  return (
+    <section className={`live-map live-map--${variant}`} aria-label="Interactive live disaster map">
+      <div ref={containerRef} className="live-map__canvas" />
+      {!ready && <div className="map-loading"><SpinnerGap size={20} className="spin" /> Loading geographic data</div>}
+      <div className="map-layer-panel" aria-label="Map layers">
+        <div className="map-layer-panel__head"><Crosshair size={16} /> Live layers</div>
+        {Object.entries(SOURCE_COLORS).map(([id, color]) => (
+          <button key={id} type="button" onClick={() => toggle(id)} className={visibility[id] ? 'is-on' : ''}>
+            <i style={{ background: color }} />
+            <span>{id === 'eonet' ? 'NASA EONET' : id.toUpperCase()}</span>
+            {visibility[id] ? <Eye size={15} /> : <EyeSlash size={15} />}
+          </button>
+        ))}
+        <div className="map-layer-panel__status">
+          <span>GDACS boundary</span>
+          <b>{boundaryState === 'loading' ? 'Loading' : boundaryState === 'available' ? `Source geometry · ${freshnessLabel(boundaryFetchedAt)}` : 'Data unavailable'}</b>
+        </div>
+        <div className="map-layer-panel__status">
+          <span>Official evacuation routes</span>
+          <b>Data unavailable</b>
+        </div>
+      </div>
+      <div className="map-source-note">OpenFreeMap · OpenMapTiles · © OpenStreetMap contributors</div>
+    </section>
+  );
+}
