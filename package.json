@@ -12,12 +12,15 @@
     "@fontsource-variable/urbanist": "latest",
     "@gsap/react": "latest",
     "@phosphor-icons/react": "latest",
+    "@turf/turf": "^7.4.0",
     "dot-globe": "^1.5.3",
     "gsap": "latest",
     "maplibre-gl": "^6.11.2",
     "react": "latest",
     "react-dom": "latest",
-    "react-router-dom": "latest"
+    "react-router-dom": "latest",
+    "three": "^0.186.1",
+    "world-countries": "^5.1.0"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "latest",

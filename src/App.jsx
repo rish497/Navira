@@ -8,18 +8,33 @@ import {
   ArrowRight, ArrowSquareOut, Broadcast, Buildings, CaretRight, ChartBar,
   ClockCounterClockwise, Database, Flask, ListBullets,
   MapTrifold, NewspaperClipping, Package, Path as RouteIcon, ShieldCheck,
-  SpinnerGap, UsersThree, WarningCircle, X,
+  SignOut, SpinnerGap, UserFocus, UsersThree, WarningCircle, X,
 } from '@phosphor-icons/react';
 import LiveMap from './LiveMap';
 import { useLiveData } from './liveData';
+import BrandMark from './BrandMark';
+import CivilianSafety from './CivilianSafety';
+import LoginPage from './LoginPage';
+import { useAuth } from './auth';
+import LocationFilter from './LocationFilter';
+import { eventDistanceKm } from './geo';
+import {
+  DispatchView, EvacuationView, InfrastructureView, LocalOperationsMap,
+  RequestsView, ResourcesView, SimulationView,
+} from './OperationsViews';
 
 gsap.registerPlugin(ScrollTrigger);
 
-const NAV_GROUPS = [
-  { label: 'Observe', items: [['command', 'Command', Broadcast], ['map', 'Live map', MapTrifold], ['events', 'Event ledger', ListBullets]] },
-  { label: 'Context', items: [['timeline', 'Timeline', ClockCounterClockwise], ['analytics', 'Analytics', ChartBar], ['news', 'News context', NewspaperClipping]] },
-  { label: 'Operations', items: [['evacuation', 'Evacuation', RouteIcon], ['dispatch', 'Dispatch', UsersThree], ['resources', 'Resources', Package], ['infrastructure', 'Infrastructure', Buildings], ['simulation', 'Simulation', Flask]] },
-];
+function navigationFor(role) {
+  const operations = role === 'operator'
+    ? [['local-map', 'Local operations', MapTrifold], ['requests', 'Help requests', UserFocus], ['evacuation', 'Evacuation', RouteIcon], ['dispatch', 'Dispatch', UsersThree], ['resources', 'Resources', Package], ['infrastructure', 'Infrastructure', Buildings], ['simulation', 'Simulation', Flask]]
+    : [['local-map', 'Near you', MapTrifold], ['requests', 'Request help', UserFocus], ['evacuation', 'Evacuation', RouteIcon]];
+  return [
+    { label: 'Observe', items: [['command', 'Command', Broadcast], ['map', 'Live map', MapTrifold], ['events', 'Event ledger', ListBullets]] },
+    { label: 'Context', items: [['timeline', 'Timeline', ClockCounterClockwise], ['analytics', 'Analytics', ChartBar], ['news', 'News context', NewspaperClipping]] },
+    { label: 'Operations', items: operations },
+  ];
+}
 
 const PAGE_COPY = {
   command: ['Live command picture', 'Agency event feeds, geographic evidence, and source condition in one operational view.'],
@@ -29,10 +44,6 @@ const PAGE_COPY = {
   analytics: ['Observed event analysis', 'Counts describe the records currently returned by the connected sources.'],
   news: ['Reporting context', 'Event-linked media reporting from GDACS is kept separate from verified agency records.'],
 };
-
-function BrandMark({ compact = false }) {
-  return <span className={`brand-mark ${compact ? 'brand-mark--compact' : ''}`}><svg viewBox="0 0 38 38" aria-hidden="true"><path d="M5 33V5h6l16 17V5h6v28h-6L11 16v17z" /><path className="brand-mark__cut" d="m11 8 16 20" /></svg>{!compact && <strong>NAVIRA</strong>}</span>;
-}
 
 function formatTime(value, { short = false } = {}) {
   if (!value) return 'Data unavailable';
@@ -67,11 +78,11 @@ function FailureState({ message, onRetry }) {
   return <div className="state-panel state-panel--error"><WarningCircle size={26} /><div><strong>Live data unavailable</strong><p>{message || 'The source request did not return usable data.'}</p></div>{onRetry && <button className="text-button" onClick={onRetry}>Retry connection <ArrowRight /></button>}</div>;
 }
 
-function SourceRail({ sources, generatedAt, compact = false }) {
+function SourceRail({ sources, generatedAt, compact = false, reveal = false }) {
   return (
-    <section className={`source-rail ${compact ? 'source-rail--compact' : ''}`} aria-label="Live source freshness">
+    <section className={`source-rail ${compact ? 'source-rail--compact' : ''} ${reveal ? 'source-rail--reveal' : ''}`} aria-label="Live source freshness">
       <div className="source-rail__intro"><Database size={19} /><div><strong>Source condition</strong><span>Retrieved {formatTime(generatedAt, { short: true })}</span></div></div>
-      {sources.map((source) => <a href={source.href} target="_blank" rel="noreferrer" key={source.id} className="source-rail__source"><i className={source.status === 'available' ? 'is-live' : 'is-down'} /><div><strong>{source.name}</strong><span>{source.status === 'available' ? `${source.count} records · fetched ${formatTime(source.fetchedAt, { short: true })}` : 'Data unavailable'}</span></div><ArrowSquareOut size={15} /></a>)}
+      {sources.map((source, index) => <a href={source.href} target="_blank" rel="noreferrer" key={source.id} className="source-rail__source" style={reveal ? { '--source-index': index } : undefined}><i className={source.status === 'available' ? 'is-live' : 'is-down'} /><div><strong>{source.name}</strong><span>{source.status === 'available' ? `${source.count} records · fetched ${formatTime(source.fetchedAt, { short: true })}` : 'Data unavailable'}</span></div><ArrowSquareOut size={15} /></a>)}
     </section>
   );
 }
@@ -131,11 +142,79 @@ function ResponseGlobe() {
   return <div ref={globe} className="response-globe" aria-hidden="true"><DotGlobe className="response-globe__canvas" backgroundOpacity={0} rotationSpeed={0.0002} tilt={[15, -10]} width="100%" height="100%" /></div>;
 }
 
+function HeroEventPanel({ event }) {
+  const [displayedEvent, setDisplayedEvent] = useState(event);
+  const [motionState, setMotionState] = useState('');
+  const displayedRef = useRef(event);
+  const latestRef = useRef(event);
+
+  useEffect(() => {
+    latestRef.current = event;
+    const current = displayedRef.current;
+
+    if (!event) {
+      displayedRef.current = null;
+      setDisplayedEvent(null);
+      setMotionState('');
+      return undefined;
+    }
+
+    if (!current) {
+      displayedRef.current = event;
+      setDisplayedEvent(event);
+      setMotionState('is-entering');
+      let settleFrame;
+      const enterFrame = window.requestAnimationFrame(() => {
+        settleFrame = window.requestAnimationFrame(() => setMotionState(''));
+      });
+      return () => {
+        window.cancelAnimationFrame(enterFrame);
+        window.cancelAnimationFrame(settleFrame);
+      };
+    }
+
+    if (current.id === event.id) return undefined;
+
+    setMotionState('is-exiting');
+    let enterFrame;
+    let settleFrame;
+    const switchDelay = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 100 : 130;
+    const timer = window.setTimeout(() => {
+      const next = latestRef.current;
+      displayedRef.current = next;
+      setDisplayedEvent(next);
+      setMotionState('is-entering');
+      enterFrame = window.requestAnimationFrame(() => {
+        settleFrame = window.requestAnimationFrame(() => setMotionState(''));
+      });
+    }, switchDelay);
+    return () => {
+      window.clearTimeout(timer);
+      window.cancelAnimationFrame(enterFrame);
+      window.cancelAnimationFrame(settleFrame);
+    };
+  }, [event?.id]);
+
+  if (!displayedEvent) return null;
+  return <div className={`hero-event ${motionState}`}><SourceBadge source={displayedEvent.source} /><strong>{displayedEvent.title}</strong><span>{displayedEvent.type} · {formatTime(displayedEvent.timestamp, { short: true })}</span><Link to="/login">Sign in to inspect <ArrowRight /></Link></div>;
+}
+
 function Landing() {
   const root = useRef(null);
   const { data, events, sources, loading, error, selectedEvent, selectEvent, refresh } = useLiveData();
   useGSAP(() => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reducedMotion) {
+      ['.response-flow__track', '.trust-rules'].forEach((selector) => {
+        gsap.from(`${selector} article`, {
+          opacity: .7,
+          duration: .1,
+          ease: 'none',
+          scrollTrigger: { trigger: selector, start: 'top 75%', once: true },
+        });
+      });
+      return;
+    }
     const enter = gsap.timeline({ defaults: { ease: 'power3.out' } });
     enter.from('.hero-signal', { opacity: 0, y: 14, duration: .5 })
       .from('.hero-primary h1 span', { opacity: 0, yPercent: 28, duration: .68, stagger: .06 }, .1)
@@ -160,13 +239,31 @@ function Landing() {
         }));
       },
     });
+
+    gsap.from('.response-flow__track article', {
+      opacity: 0,
+      y: 10,
+      duration: .26,
+      stagger: .07,
+      ease: 'power3.out',
+      scrollTrigger: { trigger: '.response-flow__track', start: 'top 75%', once: true },
+    });
+
+    gsap.from('.trust-rules article', {
+      opacity: 0,
+      y: 12,
+      duration: .26,
+      stagger: .055,
+      ease: 'power3.out',
+      scrollTrigger: { trigger: '.trust-rules', start: 'top 75%', once: true },
+    });
   }, { scope: root });
   return (
     <main ref={root} className="landing-shell">
       <header className="landing-nav">
         <Link to="/" aria-label="NAVIRA home"><BrandMark /></Link>
         <nav aria-label="Public navigation"><a href="#civilian">For people in danger</a><a href="#response">How response connects</a><a href="#sources">Data and sources</a></nav>
-        <div><span className="live-word"><i /> LIVE DATA</span><Link className="button button--dark" to="/app/map">Check live hazards <ArrowRight /></Link></div>
+        <div><span className="live-word"><i /> LIVE DATA</span><Link className="landing-signin" to="/login">Sign in</Link><Link className="button button--dark" to="/login?role=civilian">Open NAVIRA <ArrowRight /></Link></div>
       </header>
 
       <section className="hero-civic" aria-labelledby="hero-title">
@@ -175,7 +272,7 @@ function Landing() {
             <p className="hero-signal"><i /> {events.length ? `${events.length} current source records` : 'Connecting to disaster sources'}</p>
             <h1 id="hero-title"><span>Know the danger.</span><span>Find your way out.</span></h1>
             <p className="hero-primary__body">NAVIRA brings live hazards and official guidance into one map for people in danger and the teams helping them.</p>
-            <div className="hero-actions"><Link className="button button--signal" to="/app/map">Check the live map <ArrowRight /></Link><a className="button button--ghost" href="#response">See how response connects</a></div>
+            <div className="hero-actions"><Link className="button button--signal" to="/login?role=civilian">Enter civilian safety <ArrowRight /></Link><Link className="button button--ghost" to="/login?role=operator">Government operator access</Link></div>
           </div>
           <div className="decision-strip" id="civilian">
             <div className="decision-cell"><b>01</b><strong>Am I in danger?</strong><span>Inspect published hazards near your location.</span></div>
@@ -186,10 +283,10 @@ function Landing() {
         <div className="hero-map-shell">
           {loading ? <LoadingState /> : error ? <FailureState message={error} onRetry={refresh} /> : <LiveMap events={events} selectedEvent={selectedEvent} onSelect={selectEvent} variant="hero" />}
           <div className="hero-map__label"><span><i /> LIVE GEOGRAPHY</span><b>MapLibre · OpenStreetMap</b></div>
-          {selectedEvent && <div className="hero-event"><SourceBadge source={selectedEvent.source} /><strong>{selectedEvent.title}</strong><span>{selectedEvent.type} · {formatTime(selectedEvent.timestamp, { short: true })}</span><Link to="/app/map">Inspect record <ArrowRight /></Link></div>}
+          <HeroEventPanel event={selectedEvent} />
         </div>
       </section>
-      <SourceRail sources={sources} generatedAt={data?.generatedAt} />
+      <SourceRail sources={sources} generatedAt={data?.generatedAt} reveal />
 
       <section className="civilian-brief section-reveal" aria-labelledby="civilian-title">
         <div><span className="section-index">01 / CIVILIAN DECISIONS</span><h2 id="civilian-title">Location turns a disaster alert into a decision.</h2></div>
@@ -200,9 +297,9 @@ function Landing() {
         <ResponseGlobe />
         <div className="response-system__lead section-reveal"><span className="section-index">02 / SHARED RESPONSE</span><h2 id="response-title">One event moves through three hands.</h2></div>
         <div className="response-steps">
-          <article className="response-step"><b>PUBLIC</b><h3>See what is happening nearby.</h3><p>Current source records appear on a navigable map with published time, location, severity, and status.</p><Link to="/app/map">Open the public map <ArrowRight /></Link></article>
-          <article className="response-step"><b>RESPONDERS</b><h3>Inspect the record behind the marker.</h3><p>Source links and geometry stay attached, so field context can be checked against the original agency record.</p><Link to="/app/events">Inspect the event ledger <ArrowRight /></Link></article>
-          <article className="response-step"><b>COMMAND</b><h3>Keep the wider picture accountable.</h3><p>Source condition, event chronology, analysis, and news context remain distinct and time-stamped.</p><Link to="/app/command">Enter command view <ArrowRight /></Link></article>
+          <article className="response-step"><b>PUBLIC</b><h3>See what is happening nearby.</h3><p>Current source records appear on a navigable map with published time, location, severity, and status.</p><Link to="/login?role=civilian">Enter civilian safety <ArrowRight /></Link></article>
+          <article className="response-step"><b>RESPONDERS</b><h3>Inspect the record behind the marker.</h3><p>Source links and geometry stay attached, so field context can be checked against the original agency record.</p><Link to="/login?role=operator">Enter operator workspace <ArrowRight /></Link></article>
+          <article className="response-step"><b>COMMAND</b><h3>Keep the wider picture accountable.</h3><p>Source condition, event chronology, analysis, and news context remain distinct and time-stamped.</p><Link to="/login?role=operator">Open command access <ArrowRight /></Link></article>
         </div>
       </section>
 
@@ -216,30 +313,33 @@ function Landing() {
         </div>
       </section>
 
-      <section className="live-ledger section-reveal"><div className="live-ledger__title"><span className="section-index">04 / CURRENT RECORDS</span><h2>Each marker has a source behind it.</h2><p>Select a current record to carry it into the live map. NAVIRA does not rewrite missing facts.</p></div><div className="live-ledger__content"><EventList events={events} selectedEvent={selectedEvent} onSelect={selectEvent} limit={6} /><Link to="/app/events" className="ledger-link">See every current source record <ArrowRight /></Link></div></section>
+      <section className="live-ledger section-reveal"><div className="live-ledger__title"><span className="section-index">04 / CURRENT RECORDS</span><h2>Each marker has a source behind it.</h2><p>Select a current record to carry it into the live map. NAVIRA does not rewrite missing facts.</p></div><div className="live-ledger__content"><EventList events={events} selectedEvent={selectedEvent} onSelect={selectEvent} limit={6} /><Link to="/login" className="ledger-link">Sign in to inspect every record <ArrowRight /></Link></div></section>
 
       <section className="trust-system" id="sources" aria-labelledby="trust-title">
         <div className="trust-system__lead"><span className="section-index">05 / DATA TRUST</span><h2 id="trust-title">Know what is live. Know what is missing.</h2></div>
         <div className="trust-rules"><article><ShieldCheck /><h3>Agency records stay separate from reporting.</h3><p>GDACS news adds context, but it is never presented as verified incident fact.</p></article><article><MapTrifold /><h3>Geography keeps its real proportions.</h3><p>MapLibre renders OpenStreetMap-based geography with real zooming, panning, labels, and source-native geometry.</p></article><article><Database /><h3>Absence is shown plainly.</h3><p>Routes, dispatch units, resources, and infrastructure remain unavailable until authoritative systems are connected.</p></article></div>
       </section>
 
-      <section className="landing-action section-reveal"><div><span className="section-index">LIVE RESPONSE MAP</span><h2>Check the hazards that sources are reporting now.</h2></div><Link className="button button--paper" to="/app/map">Open the live map <ArrowRight /></Link></section>
-      <footer className="landing-footer"><BrandMark /><span>Disaster data: NASA EONET · GDACS · USGS</span><span>Geography: OpenFreeMap · OpenStreetMap</span><Link to="/app/command">Command workspace <ArrowRight /></Link></footer>
+      <section className="landing-action section-reveal"><div><span className="section-index">LIVE RESPONSE MAP</span><h2>Choose the workspace that matches your responsibility.</h2></div><Link className="button button--paper" to="/login">Sign in to NAVIRA <ArrowRight /></Link></section>
+      <footer className="landing-footer"><BrandMark /><span>Disaster data: NASA EONET · GDACS · USGS</span><span>Geography: OpenFreeMap · OpenStreetMap</span><Link to="/login">Workspace access <ArrowRight /></Link></footer>
     </main>
   );
 }
 
 function SideNavigation({ open, onClose }) {
-  return <><button className={`nav-backdrop ${open ? 'is-visible' : ''}`} onClick={onClose} aria-label="Close navigation" /><aside className={`side-navigation ${open ? 'is-open' : ''}`} aria-label="Mobile workspace navigation"><div className="side-navigation__brand"><Link to="/"><BrandMark /></Link><button onClick={onClose} aria-label="Close navigation"><X /></button></div><nav>{NAV_GROUPS.map((group) => <div className="nav-cluster" key={group.label}><span>{group.label}</span>{group.items.map(([id, label, Icon]) => <NavLink key={id} to={`/app/${id}`} onClick={onClose}><Icon /><b>{label}</b></NavLink>)}</div>)}</nav><div className="side-navigation__foot"><i /><span><strong>LIVE SOURCES</strong><small>NASA · GDACS · USGS</small></span></div></aside></>;
+  const { profile, signOut } = useAuth(); const groups = navigationFor(profile.role);
+  return <><button className={`nav-backdrop ${open ? 'is-visible' : ''}`} onClick={onClose} aria-label="Close navigation" /><aside className={`side-navigation ${open ? 'is-open' : ''}`} aria-label="Mobile workspace navigation"><div className="side-navigation__brand"><Link to="/"><BrandMark /></Link><button onClick={onClose} aria-label="Close navigation"><X /></button></div><div className="navigation-identity"><span>{profile.role}</span><strong>{profile.name}</strong><small>{profile.organization || profile.email}</small></div><nav>{groups.map((group) => <div className="nav-cluster" key={group.label}><span>{group.label}</span>{group.items.map(([id, label, Icon]) => <NavLink key={id} to={`/app/${id}`} onClick={onClose}><Icon /><b>{label}</b></NavLink>)}</div>)}</nav><button className="navigation-signout" type="button" onClick={signOut}><SignOut /> Sign out</button><div className="side-navigation__foot"><i /><span><strong>LIVE SOURCES</strong><small>NASA · GDACS · USGS</small></span></div></aside></>;
 }
 
 function ModuleNavigation() {
-  return <aside className="module-navigation"><Link className="module-navigation__brand" to="/" aria-label="NAVIRA home"><BrandMark /></Link><nav aria-label="Workspace modules">{NAV_GROUPS.map((group) => <div className="module-group" key={group.label}><span>{group.label}</span>{group.items.map(([id, label, Icon]) => <NavLink key={id} to={`/app/${id}`}><Icon /><b>{label}</b></NavLink>)}</div>)}</nav><div className="module-navigation__foot"><i /><span><strong>LIVE SOURCES</strong><small>NASA · GDACS · USGS</small></span></div></aside>;
+  const { profile, signOut } = useAuth(); const groups = navigationFor(profile.role);
+  return <aside className="module-navigation"><Link className="module-navigation__brand" to="/" aria-label="NAVIRA home"><BrandMark /></Link><div className="navigation-identity"><span>{profile.role}</span><strong>{profile.name}</strong><small>{profile.organization || profile.email}</small></div><nav aria-label="Workspace modules">{groups.map((group) => <div className="module-group" key={group.label}><span>{group.label}</span>{group.items.map(([id, label, Icon]) => <NavLink key={id} to={`/app/${id}`}><Icon /><b>{label}</b></NavLink>)}</div>)}</nav><button className="navigation-signout" type="button" onClick={signOut}><SignOut /> Sign out</button><div className="module-navigation__foot"><i /><span><strong>LIVE SOURCES</strong><small>NASA · GDACS · USGS</small></span></div></aside>;
 }
 
 function WorkspaceHeader({ onMenu }) {
   const { data, loading, refresh } = useLiveData();
-  return <><header className="workspace-header"><div className="workspace-header__brand"><button className="menu-button" onClick={onMenu} aria-label="Open navigation"><span /><span /></button><Link to="/" aria-label="NAVIRA home"><BrandMark /></Link></div><p>Disaster geography, event sources, and operational context</p><button className="refresh-button" disabled={loading} onClick={refresh}>{loading ? <SpinnerGap className="spin" /> : <Broadcast />}<span>Refresh sources</span></button></header><div className="freshness-bar"><span key={data?.generatedAt || 'pending'} className="freshness-live"><i /> LIVE DATA</span><b>Last NAVIRA retrieval</b><time>{formatTime(data?.generatedAt, { short: true })}</time><small>Every record retains its source time</small></div></>;
+  const { profile } = useAuth();
+  return <><header className="workspace-header"><div className="workspace-header__brand"><button className="menu-button" onClick={onMenu} aria-label="Open navigation"><span /><span /></button><Link to="/" aria-label="NAVIRA home"><BrandMark /></Link></div><p>{profile.role === 'operator' ? `${profile.organization || 'Government'} response workspace` : 'Civilian safety workspace'}</p><button className="refresh-button" disabled={loading} onClick={refresh}>{loading ? <SpinnerGap className="spin" /> : <Broadcast />}<span>Refresh sources</span></button></header><div className="freshness-bar"><span key={data?.generatedAt || 'pending'} className="freshness-live"><i /> LIVE DATA</span><b>Last NAVIRA retrieval</b><time>{formatTime(data?.generatedAt, { short: true })}</time><small>Every record retains its source time</small></div></>;
 }
 
 function PageIntro({ view }) {
@@ -286,15 +386,23 @@ function TimelineView() {
 
 function AnalyticsView() {
   const { events, sources } = useLiveData();
-  const byType = useMemo(() => Object.entries(events.reduce((acc, event) => ({ ...acc, [event.type]: (acc[event.type] || 0) + 1 }), {})).sort((a, b) => b[1] - a[1]), [events]);
+  const [location, setLocation] = useState(null); const [radiusKm, setRadiusKm] = useState(500);
+  const visibleEvents = useMemo(() => location ? events.filter((event) => {
+    const distance = eventDistanceKm(location, event); return Number.isFinite(distance) && distance <= radiusKm;
+  }) : events, [events, location, radiusKm]);
+  const byType = useMemo(() => Object.entries(visibleEvents.reduce((acc, event) => ({ ...acc, [event.type]: (acc[event.type] || 0) + 1 }), {})).sort((a, b) => b[1] - a[1]), [visibleEvents]);
   const max = Math.max(1, ...byType.map(([, count]) => count));
-  return <><PageIntro view="analytics" /><section className="analytics-sheet"><div className="analytics-sheet__sources"><h2>Records by source</h2>{sources.map((source) => <div key={source.id}><SourceBadge source={source} /><strong>{source.status === 'available' ? source.count : 'Data unavailable'}</strong><span>Fetched {formatTime(source.fetchedAt)}</span></div>)}</div><div className="analytics-sheet__types"><h2>Published event types</h2>{byType.length ? byType.map(([type, count]) => <div className="type-bar" key={type}><span>{type}</span><i><b style={{ width: `${(count / max) * 100}%` }} /></i><strong>{count}</strong></div>) : <div className="empty-data"><strong>Data unavailable</strong></div>}<p>Counts reflect the current API response only. They do not estimate impact, people affected, or risk.</p></div></section></>;
+  const sourceCount = (id) => visibleEvents.filter((event) => event.source.id === id).length;
+  return <><PageIntro view="analytics" /><LocationFilter value={location} radiusKm={radiusKm} onChange={setLocation} onRadiusChange={setRadiusKm} /><div className="analytics-scope"><strong>{visibleEvents.length}</strong><span>published records {location ? `within ${radiusKm.toLocaleString()} km of ${location.label}` : 'worldwide'}</span></div><section className="analytics-sheet"><div className="analytics-sheet__sources"><h2>Records by source</h2>{sources.map((source) => <div key={source.id}><SourceBadge source={source} /><strong>{source.status === 'available' ? sourceCount(source.id) : 'Data unavailable'}</strong><span>Fetched {formatTime(source.fetchedAt)}</span></div>)}</div><div className="analytics-sheet__types"><h2>Published event types</h2>{byType.length ? byType.map(([type, count]) => <div className="type-bar" key={type}><span>{type}</span><i><b style={{ width: `${(count / max) * 100}%` }} /></i><strong>{count}</strong></div>) : <div className="empty-data"><strong>No records in this area</strong><span>Try a wider analysis radius.</span></div>}<p>Location filtering measures each record’s published geometry against the selected place. Counts do not estimate impact, people affected, or risk.</p></div></section></>;
 }
 
 function NewsView() {
   const { events, selectedEvent, selectEvent } = useLiveData();
-  const gdacsEvents = events.filter((event) => event.gdacsKey);
-  const active = selectedEvent?.gdacsKey ? selectedEvent : gdacsEvents[0];
+  const [location, setLocation] = useState(null); const [radiusKm, setRadiusKm] = useState(500);
+  const gdacsEvents = useMemo(() => events.filter((event) => event.gdacsKey).filter((event) => {
+    if (!location) return true; const distance = eventDistanceKm(location, event); return Number.isFinite(distance) && distance <= radiusKm;
+  }), [events, location, radiusKm]);
+  const active = selectedEvent?.gdacsKey && gdacsEvents.some((event) => event.id === selectedEvent.id) ? selectedEvent : gdacsEvents[0];
   const [state, setState] = useState({ loading: false, data: null, error: null });
   useEffect(() => {
     if (!active?.gdacsKey) { setState({ loading: false, data: null, error: null }); return; }
@@ -304,29 +412,18 @@ function NewsView() {
     fetch(`/api/gdacs-news?${params}`, { cache: 'no-store' }).then((response) => { if (!response.ok) throw new Error('News feed unavailable'); return response.json(); }).then((data) => current && setState({ loading: false, data, error: null })).catch((error) => current && setState({ loading: false, data: null, error: error.message }));
     return () => { current = false; };
   }, [active?.id]);
-  return <><PageIntro view="news" /><div className="news-layout"><aside><span>GDACS EVENTS</span>{gdacsEvents.map((event) => <button className={active?.id === event.id ? 'is-selected' : ''} key={event.id} onClick={() => selectEvent(event)}><strong>{event.title}</strong><small>{event.country || event.type}</small></button>)}</aside><section className="news-feed"><div className="news-feed__warning"><NewspaperClipping /><div><strong>News reporting</strong><span>These items are media context indexed by GDACS. They are not agency-verified incident facts.</span></div></div>{!active ? <div className="empty-data"><strong>Data unavailable</strong><span>No GDACS event record is currently available.</span></div> : state.loading ? <LoadingState label="Loading event-linked reporting" /> : state.error ? <FailureState message={state.error} /> : state.data?.items?.length ? <>{state.data.items.map((item) => <article key={item.id}><div><span>{item.publisher}</span><time>{formatTime(item.publishedAt, { short: true })}</time></div><h2>{item.title}</h2><p>{item.description || 'Data unavailable'}</p>{item.href && <a href={item.href} target="_blank" rel="noreferrer">Read original report <ArrowSquareOut /></a>}</article>)}<small className="feed-freshness">Feed retrieved {formatTime(state.data.fetchedAt)}</small></> : <div className="empty-data"><strong>Data unavailable</strong><span>No indexed reporting was returned for this event.</span></div>}</section></div></>;
-}
-
-const OPERATION_COPY = {
-  evacuation: { title: 'Evacuation routes', requirement: 'A route can only be published from an authorized local transport or emergency-management feed.', icon: RouteIcon },
-  dispatch: { title: 'Responder dispatch', requirement: 'Unit identity, capability, availability, and location require a connected dispatch authority.', icon: UsersThree },
-  resources: { title: 'Resource coordination', requirement: 'Inventory and shelter capacity require a connected logistics or humanitarian source.', icon: Package },
-  infrastructure: { title: 'Infrastructure monitoring', requirement: 'Utility state requires a connected infrastructure operator or public authority.', icon: Buildings },
-  simulation: { title: 'Disaster simulation', requirement: 'A simulation requires an explicit model, inputs, uncertainty range, and run provenance.', icon: Flask },
-};
-
-function UnavailableOperation({ view }) {
-  const item = OPERATION_COPY[view]; const Icon = item.icon;
-  return <><div className="page-intro"><div><span className="module-code">NAVIRA / {view.toUpperCase()}</span><h1>{item.title}</h1></div><p>{item.requirement}</p></div><section className="unavailable-module"><Icon size={48} /><div><strong>Data unavailable</strong><p>{item.requirement} NAVIRA will not infer operational data from public disaster events.</p></div><Link to="/app/map">Return to live geographic picture <ArrowRight /></Link></section></>;
+  return <><PageIntro view="news" /><LocationFilter value={location} radiusKm={radiusKm} onChange={setLocation} onRadiusChange={setRadiusKm} label="Filter reporting by location" /><div className="news-layout"><aside><span>GDACS EVENTS · {gdacsEvents.length}</span>{gdacsEvents.map((event) => <button className={active?.id === event.id ? 'is-selected' : ''} key={event.id} onClick={() => selectEvent(event)}><strong>{event.title}</strong><small>{event.country || event.type} · {formatTime(event.timestamp, { short: true })}</small></button>)}</aside><section className="news-feed"><div className="news-feed__warning"><NewspaperClipping /><div><strong>Reporting context for {active?.title || 'the selected area'}</strong><span>GDACS indexes these media reports. They remain separate from agency-verified incident facts.</span></div></div>{!active ? <div className="empty-data"><strong>No GDACS event in this area</strong><span>Clear the location or widen the radius to inspect other reporting.</span></div> : state.loading ? <LoadingState label="Loading event-linked reporting" /> : state.error ? <FailureState message={state.error} /> : state.data?.items?.length ? <>{state.data.items.map((item) => <article key={item.id}><div><span>{item.publisher}</span><time>{formatTime(item.publishedAt, { short: true })}</time></div><h2>{item.title}</h2><p>{item.description || 'No description was supplied by the indexed report.'}</p>{item.href && <a href={item.href} target="_blank" rel="noreferrer">Read at original publisher <ArrowSquareOut /></a>}</article>)}<small className="feed-freshness">GDACS / Europe Media Monitor · retrieved {formatTime(state.data.fetchedAt)}</small></> : <div className="empty-data"><strong>No indexed reporting returned</strong><span>The event remains available in the verified event ledger.</span></div>}</section></div></>;
 }
 
 function WorkspacePage() {
   const { view = 'command' } = useParams();
+  const { profile } = useAuth();
   const { data, sources, loading, error, refresh } = useLiveData();
   if (loading && !data) return <div className="workspace-state"><BrandMark /><LoadingState /></div>;
   if (error && !data) return <div className="workspace-state"><BrandMark /><FailureState message={error} onRetry={refresh} /></div>;
+  if (profile.role !== 'operator' && ['dispatch', 'resources', 'infrastructure', 'simulation'].includes(view)) return <Navigate to="/app/local-map" replace />;
   let content;
-  if (view === 'command') content = <CommandView />; else if (view === 'map') content = <MapView />; else if (view === 'events') content = <LedgerView />; else if (view === 'timeline') content = <TimelineView />; else if (view === 'analytics') content = <AnalyticsView />; else if (view === 'news') content = <NewsView />; else if (OPERATION_COPY[view]) content = <UnavailableOperation view={view} />; else return <Navigate to="/app/command" replace />;
+  if (view === 'command') content = <CommandView />; else if (view === 'map') content = <MapView />; else if (view === 'events') content = <LedgerView />; else if (view === 'timeline') content = <TimelineView />; else if (view === 'analytics') content = <AnalyticsView />; else if (view === 'news') content = <NewsView />; else if (view === 'local-map') content = <LocalOperationsMap />; else if (view === 'requests') content = <RequestsView />; else if (view === 'evacuation') content = <EvacuationView />; else if (view === 'dispatch') content = <DispatchView />; else if (view === 'resources') content = <ResourcesView />; else if (view === 'infrastructure') content = <InfrastructureView />; else if (view === 'simulation') content = <SimulationView />; else return <Navigate to="/app/command" replace />;
   return <><main className="workspace-main"><div key={view} className="workspace-view">{content}</div></main><SourceRail sources={sources} generatedAt={data?.generatedAt} compact /></>;
 }
 
@@ -335,6 +432,11 @@ function Workspace() {
   return <div className="workspace-shell"><SideNavigation open={navOpen} onClose={() => setNavOpen(false)} /><ModuleNavigation /><div className="workspace-surface"><WorkspaceHeader onMenu={() => setNavOpen(true)} /><Routes><Route path=":view" element={<WorkspacePage />} /><Route path="*" element={<Navigate to="command" replace />} /></Routes></div></div>;
 }
 
+function ProtectedRoute({ children }) {
+  const { profile } = useAuth();
+  return profile ? children : <Navigate to="/login" replace />;
+}
+
 export default function App() {
-  return <Routes><Route path="/" element={<Landing />} /><Route path="/app/*" element={<Workspace />} /><Route path="*" element={<Navigate to="/" replace />} /></Routes>;
+  return <Routes><Route path="/" element={<Landing />} /><Route path="/login" element={<LoginPage />} /><Route path="/safety" element={<ProtectedRoute><CivilianSafety /></ProtectedRoute>} /><Route path="/app/*" element={<ProtectedRoute><Workspace /></ProtectedRoute>} /><Route path="*" element={<Navigate to="/" replace />} /></Routes>;
 }

@@ -5,13 +5,19 @@ import '@fontsource-variable/urbanist';
 import App from './App';
 import './styles.css';
 import { LiveDataProvider } from './liveData';
+import { AuthProvider } from './auth';
+import { OperationsProvider } from './operationsData';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
-      <LiveDataProvider>
-        <App />
-      </LiveDataProvider>
+      <AuthProvider>
+        <LiveDataProvider>
+          <OperationsProvider>
+            <App />
+          </OperationsProvider>
+        </LiveDataProvider>
+      </AuthProvider>
     </BrowserRouter>
   </React.StrictMode>,
 );

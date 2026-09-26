@@ -31,6 +31,8 @@ const CACHE_TTL = 5 * 60 * 1000;
 let liveCache = null;
 let liveCacheTime = 0;
 const newsCache = new Map();
+const geocodeCache = new Map();
+const routeCache = new Map();
 let eonetCache = null;
 let eonetCacheTime = 0;
 let eonetInflight = null;
@@ -60,12 +62,29 @@ function pointCoordinates(geometry) {
   return [longitude, latitude];
 }
 
-async function getJson(url, timeout = 30000) {
+async function getJson(url, timeout = 30000, headers = {}) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeout);
   try {
     const response = await fetch(url, {
-      headers: { Accept: 'application/json, application/geo+json;q=0.9' },
+      headers: { Accept: 'application/json, application/geo+json;q=0.9', ...headers },
+      signal: controller.signal,
+    });
+    if (!response.ok) throw new Error(`Upstream returned HTTP ${response.status}`);
+    return JSON.parse(await response.text());
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function postJson(url, body, headers = {}, timeout = 30000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeout);
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { Accept: 'application/json', 'Content-Type': 'application/json', ...headers },
+      body: JSON.stringify(body),
       signal: controller.signal,
     });
     if (!response.ok) throw new Error(`Upstream returned HTTP ${response.status}`);
@@ -233,7 +252,9 @@ function assembleLiveData(results) {
       resources: 'Data unavailable',
       infrastructure: 'Data unavailable',
       simulation: 'Data unavailable',
-      aiSummary: process.env.OPENAI_API_KEY ? 'Available server-side' : 'Data unavailable — no server-side AI API key configured',
+      aiSummary: process.env.YOLO_AUTO_API_KEY || process.env.OPENAI_API_KEY
+        ? 'Yolo-Auto explanation available server-side'
+        : 'Data unavailable — no server-side AI API key configured',
     },
   };
 }
@@ -331,4 +352,110 @@ export async function getGdacsNews({ eventtype, eventid }) {
   };
   newsCache.set(cacheKey, { time: Date.now(), data });
   return data;
+}
+
+function coordinate(value, minimum, maximum) {
+  const number = Number(value);
+  return Number.isFinite(number) && number >= minimum && number <= maximum ? number : null;
+}
+
+export async function searchDestinations(query) {
+  const normalized = String(query || '').trim().replace(/\s+/g, ' ');
+  if (normalized.length < 3 || normalized.length > 160) throw new Error('Enter at least three characters for a destination');
+  const cacheKey = normalized.toLowerCase();
+  const cached = geocodeCache.get(cacheKey);
+  if (cached && Date.now() - cached.time < CACHE_TTL) return cached.data;
+  const params = new URLSearchParams({ q: normalized, limit: '5', lang: 'en' });
+  const payload = await getJson(`https://photon.komoot.io/api/?${params}`, 20000, { 'User-Agent': 'NAVIRA/1.0 destination search' });
+  const items = (payload.features || []).flatMap((feature, index) => {
+    const [longitude, latitude] = feature.geometry?.coordinates || [];
+    if (!Number.isFinite(longitude) || !Number.isFinite(latitude)) return [];
+    const props = feature.properties || {};
+    const parts = [props.name, props.street, props.city || props.county, props.state, props.country].filter(Boolean);
+    return [{
+      id: `${longitude}:${latitude}:${index}`,
+      label: [...new Set(parts)].join(', ') || 'Unnamed destination',
+      longitude,
+      latitude,
+      source: { name: 'Photon', attribution: 'OpenStreetMap contributors', href: 'https://photon.komoot.io/' },
+    }];
+  });
+  const data = { fetchedAt: new Date().toISOString(), items };
+  geocodeCache.set(cacheKey, { time: Date.now(), data });
+  return data;
+}
+
+export async function getRoadRoutes({ startLng, startLat, endLng, endLat }) {
+  const start = [coordinate(startLng, -180, 180), coordinate(startLat, -90, 90)];
+  const end = [coordinate(endLng, -180, 180), coordinate(endLat, -90, 90)];
+  if (start.includes(null) || end.includes(null)) throw new Error('Invalid route coordinates');
+  const cacheKey = [...start, ...end].map((value) => value.toFixed(5)).join(':');
+  const cached = routeCache.get(cacheKey);
+  if (cached && Date.now() - cached.time < CACHE_TTL) return cached.data;
+  const coordinates = `${start[0]},${start[1]};${end[0]},${end[1]}`;
+  const params = new URLSearchParams({ alternatives: 'true', steps: 'true', overview: 'full', geometries: 'geojson' });
+  const payload = await getJson(`https://router.project-osrm.org/route/v1/driving/${coordinates}?${params}`, 30000, { 'User-Agent': 'NAVIRA/1.0 route comparison' });
+  if (payload.code !== 'Ok') throw new Error(payload.message || 'Routing engine did not return a route');
+  const routes = (payload.routes || []).flatMap((route, index) => {
+    const geometry = sanitizeGeometry(route.geometry);
+    if (geometry?.type !== 'LineString') return [];
+    return [{
+      id: `osrm:${index}:${Math.round(route.distance || 0)}`,
+      durationSeconds: finiteNumber(route.duration),
+      distanceMeters: finiteNumber(route.distance),
+      geometry,
+      roadSummary: (route.legs || []).flatMap((leg) => leg.summary ? [leg.summary] : []).join(' · ') || null,
+    }];
+  });
+  const data = {
+    fetchedAt: new Date().toISOString(),
+    source: { name: 'OSRM', href: 'https://project-osrm.org/', attribution: 'Routing from OpenStreetMap road data' },
+    routes,
+  };
+  routeCache.set(cacheKey, { time: Date.now(), data });
+  return data;
+}
+
+function safeExplanationPayload(payload) {
+  if (!payload || !Array.isArray(payload.routes) || !payload.event) throw new Error('Verified route comparison is required');
+  return {
+    event: {
+      title: String(payload.event.title || 'Data unavailable').slice(0, 180),
+      source: String(payload.event.source || 'Data unavailable').slice(0, 80),
+      type: String(payload.event.type || 'Data unavailable').slice(0, 80),
+      status: String(payload.event.status || 'Data unavailable').slice(0, 80),
+    },
+    destination: String(payload.destination || 'Data unavailable').slice(0, 240),
+    routes: payload.routes.slice(0, 3).map((route) => ({
+      role: String(route.role || 'alternative'),
+      etaMinutes: finiteNumber(route.etaMinutes),
+      distanceKilometers: finiteNumber(route.distanceKilometers),
+      verifiedExposureKilometers: finiteNumber(route.verifiedExposureKilometers),
+      hazardsEncountered: Array.isArray(route.hazardsEncountered) ? route.hazardsEncountered.slice(0, 10).map(String) : [],
+      hazardsAvoided: Array.isArray(route.hazardsAvoided) ? route.hazardsAvoided.slice(0, 10).map(String) : [],
+    })),
+  };
+}
+
+export async function explainRouteComparison(payload) {
+  const apiKey = process.env.YOLO_AUTO_API_KEY || process.env.OPENAI_API_KEY;
+  if (!apiKey) return { status: 'unavailable', explanation: null, message: 'Data unavailable — no server-side Yolo-Auto API key is configured.' };
+  const model = process.env.YOLO_AUTO_MODEL || 'qwen3.8-flash';
+  const facts = safeExplanationPayload(payload);
+  const response = await postJson('https://yolo-auto.com/v1/chat/completions', {
+    model,
+    temperature: 0,
+    max_tokens: 260,
+    messages: [
+      {
+        role: 'system',
+        content: 'You explain a deterministic disaster-route comparison. Use only the supplied JSON facts. Do not infer road conditions, safety, disaster extent, severity, official advice, or evacuation decisions. If no route has lower verified hazard exposure, state that clearly. Keep the explanation under 110 words and distinguish verified geometry from routing data.',
+      },
+      { role: 'user', content: JSON.stringify(facts) },
+    ],
+  }, { Authorization: `Bearer ${apiKey}` }, 30000);
+  const explanation = response.choices?.[0]?.message?.content?.trim() || null;
+  return explanation
+    ? { status: 'available', model, explanation, generatedAt: new Date().toISOString() }
+    : { status: 'unavailable', model, explanation: null, message: 'The explanation service returned no usable text.' };
 }

@@ -5,3 +5,4 @@ qa/chrome-*/
 .vite/
 .env*
 !.env.example
+.navira-data/

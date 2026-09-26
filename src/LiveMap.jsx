@@ -37,7 +37,7 @@ function eventCollection(events) {
 }
 
 function coordinatesOf(geometry) {
-  if (!geometry?.coordinates) return [];
+  if (!geometry) return [];
   const result = [];
   const walk = (value) => {
     if (Array.isArray(value) && value.length >= 2 && typeof value[0] === 'number' && typeof value[1] === 'number') {
@@ -46,7 +46,9 @@ function coordinatesOf(geometry) {
     }
     if (Array.isArray(value)) value.forEach(walk);
   };
-  walk(geometry.coordinates);
+  if (geometry.type === 'FeatureCollection') geometry.features?.forEach((feature) => walk(feature.geometry?.coordinates));
+  else if (geometry.type === 'Feature') walk(geometry.geometry?.coordinates);
+  else walk(geometry.coordinates);
   return result.filter(([lng, lat]) => Number.isFinite(lng) && Number.isFinite(lat) && Math.abs(lng) <= 180 && Math.abs(lat) <= 90);
 }
 
@@ -79,20 +81,71 @@ function freshnessLabel(value) {
   return new Intl.DateTimeFormat('en', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC', timeZoneName: 'short' }).format(new Date(value));
 }
 
-export default function LiveMap({ events, selectedEvent, onSelect, variant = 'workspace' }) {
+export default function LiveMap({
+  events,
+  selectedEvent,
+  onSelect,
+  variant = 'workspace',
+  userLocation = null,
+  viewMode = 'world',
+  routes = [],
+  destination = null,
+  selectedRouteId = null,
+  onBoundaryChange,
+  showLayerPanel = true,
+  people = [],
+  onPersonSelect,
+}) {
   const containerRef = useRef(null);
   const mapRef = useRef(null);
   const [ready, setReady] = useState(false);
+  const [showHeroLoader, setShowHeroLoader] = useState(true);
   const [visibility, setVisibility] = useState({ eonet: true, gdacs: true, usgs: true });
   const [boundaryState, setBoundaryState] = useState('idle');
   const [boundaryFetchedAt, setBoundaryFetchedAt] = useState(null);
   const collection = useMemo(() => eventCollection(events), [events]);
+  const routeCollection = useMemo(() => ({
+    type: 'FeatureCollection',
+    features: routes.map((route) => ({
+      type: 'Feature',
+      id: route.id,
+      geometry: route.geometry,
+      properties: {
+        routeId: route.id,
+        role: route.role,
+        selected: route.id === selectedRouteId,
+      },
+    })),
+  }), [routes, selectedRouteId]);
+  const peopleCollection = useMemo(() => ({
+    type: 'FeatureCollection',
+    features: people.filter((item) => Number.isFinite(item.longitude) && Number.isFinite(item.latitude)).map((item) => ({
+      type: 'Feature',
+      id: item.id || item.userId,
+      geometry: { type: 'Point', coordinates: [item.longitude, item.latitude] },
+      properties: { personId: item.id || item.userId, status: item.status || 'location', name: item.userName || item.name || 'Shared location' },
+    })),
+  }), [people]);
   const collectionRef = useRef(collection);
   const onSelectRef = useRef(onSelect);
+  const onBoundaryChangeRef = useRef(null);
+  const onPersonSelectRef = useRef(onPersonSelect);
   const hasFocusedRef = useRef(false);
 
   useEffect(() => { collectionRef.current = collection; }, [collection]);
   useEffect(() => { onSelectRef.current = onSelect; }, [onSelect]);
+  useEffect(() => { onBoundaryChangeRef.current = onBoundaryChange; }, [onBoundaryChange]);
+  useEffect(() => { onPersonSelectRef.current = onPersonSelect; }, [onPersonSelect]);
+
+  useEffect(() => {
+    if (variant !== 'hero') return undefined;
+    if (!ready) {
+      setShowHeroLoader(true);
+      return undefined;
+    }
+    const timer = window.setTimeout(() => setShowHeroLoader(false), 160);
+    return () => window.clearTimeout(timer);
+  }, [ready, variant]);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return undefined;
@@ -115,6 +168,9 @@ export default function LiveMap({ events, selectedEvent, onSelect, variant = 'wo
       map.addSource('navira-events', { type: 'geojson', data: collectionRef.current, promoteId: 'eventId' });
       map.addSource('gdacs-boundary', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
       map.addSource('verified-routes', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+      map.addSource('navira-user', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+      map.addSource('navira-destination', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+      map.addSource('navira-people', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
 
       map.addLayer({
         id: 'event-polygons', type: 'fill', source: 'navira-events',
@@ -154,8 +210,36 @@ export default function LiveMap({ events, selectedEvent, onSelect, variant = 'wo
         paint: { 'line-color': '#ff5537', 'line-width': 2.5, 'line-dasharray': [2, 1] },
       });
       map.addLayer({
+        id: 'verified-routes-casing', type: 'line', source: 'verified-routes',
+        paint: { 'line-color': '#0f1113', 'line-width': ['case', ['get', 'selected'], 9, 7], 'line-opacity': .82 },
+      });
+      map.addLayer({
         id: 'verified-routes-line', type: 'line', source: 'verified-routes',
-        paint: { 'line-color': '#d7dcde', 'line-width': 4 },
+        paint: {
+          'line-color': ['match', ['get', 'role'], 'fastest', '#ff3b1f', 'safer', '#f1eee9', '#74a7b9'],
+          'line-width': ['case', ['get', 'selected'], 6, 4],
+          'line-opacity': ['case', ['get', 'selected'], 1, .6],
+        },
+      });
+      map.addLayer({
+        id: 'navira-user-halo', type: 'circle', source: 'navira-user',
+        paint: { 'circle-radius': 14, 'circle-color': '#f1eee9', 'circle-opacity': .24 },
+      });
+      map.addLayer({
+        id: 'navira-user-point', type: 'circle', source: 'navira-user',
+        paint: { 'circle-radius': 6, 'circle-color': '#0f1113', 'circle-stroke-color': '#f1eee9', 'circle-stroke-width': 3 },
+      });
+      map.addLayer({
+        id: 'navira-destination-point', type: 'circle', source: 'navira-destination',
+        paint: { 'circle-radius': 7, 'circle-color': '#ff3b1f', 'circle-stroke-color': '#0f1113', 'circle-stroke-width': 3 },
+      });
+      map.addLayer({
+        id: 'navira-people-halo', type: 'circle', source: 'navira-people',
+        paint: { 'circle-radius': 15, 'circle-color': ['case', ['==', ['get', 'status'], 'location'], '#f1eee9', '#ff5537'], 'circle-opacity': .2 },
+      });
+      map.addLayer({
+        id: 'navira-people-point', type: 'circle', source: 'navira-people',
+        paint: { 'circle-radius': 7, 'circle-color': ['case', ['==', ['get', 'status'], 'location'], '#f1eee9', '#ff5537'], 'circle-stroke-color': '#0f1113', 'circle-stroke-width': 2 },
       });
 
       ['event-points', 'event-lines', 'event-polygons'].forEach((layer) => {
@@ -167,6 +251,9 @@ export default function LiveMap({ events, selectedEvent, onSelect, variant = 'wo
         map.on('mouseenter', layer, () => { map.getCanvas().style.cursor = 'pointer'; });
         map.on('mouseleave', layer, () => { map.getCanvas().style.cursor = ''; });
       });
+      map.on('click', 'navira-people-point', (event) => onPersonSelectRef.current?.(event.features?.[0]?.properties?.personId));
+      map.on('mouseenter', 'navira-people-point', () => { map.getCanvas().style.cursor = 'pointer'; });
+      map.on('mouseleave', 'navira-people-point', () => { map.getCanvas().style.cursor = ''; });
       setReady(true);
     });
 
@@ -197,41 +284,94 @@ export default function LiveMap({ events, selectedEvent, onSelect, variant = 'wo
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!ready || !map || !selectedEvent) return;
-    if (!hasFocusedRef.current) {
-      hasFocusedRef.current = true;
-      return;
-    }
-    fitGeometry(map, selectedEvent.geometry);
+    if (!ready || !map) return;
+    const source = map.getSource('navira-user');
+    source?.setData(userLocation ? {
+      type: 'FeatureCollection',
+      features: [{ type: 'Feature', properties: {}, geometry: { type: 'Point', coordinates: [userLocation.longitude, userLocation.latitude] } }],
+    } : { type: 'FeatureCollection', features: [] });
+    if (viewMode === 'near' && userLocation) map.easeTo({ center: [userLocation.longitude, userLocation.latitude], zoom: 7.5, duration: 850 });
+    if (viewMode === 'world') map.easeTo({ center: [12, 18], zoom: 1.55, duration: 850 });
+  }, [userLocation, viewMode, ready]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!ready || !map) return;
+    map.getSource('navira-destination')?.setData(destination ? {
+      type: 'FeatureCollection',
+      features: [{ type: 'Feature', properties: {}, geometry: { type: 'Point', coordinates: [destination.longitude, destination.latitude] } }],
+    } : { type: 'FeatureCollection', features: [] });
+  }, [destination, ready]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!ready || !map) return;
+    map.getSource('navira-people')?.setData(peopleCollection);
+  }, [peopleCollection, ready]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!ready || !map) return;
+    map.getSource('verified-routes')?.setData(routeCollection);
+    if (routeCollection.features.length) fitGeometry(map, routeCollection, { padding: variant === 'civilian' ? 70 : 90, maxZoom: 13 });
+  }, [routeCollection, ready, variant]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!ready || !map) return;
     const boundarySource = map.getSource('gdacs-boundary');
     boundarySource?.setData({ type: 'FeatureCollection', features: [] });
     setBoundaryFetchedAt(null);
+    if (!selectedEvent) {
+      setBoundaryState('idle');
+      onBoundaryChangeRef.current?.({ state: 'idle', eventId: null, collection: null, fetchedAt: null });
+      return;
+    }
+    if (variant === 'civilian' && viewMode === 'world') hasFocusedRef.current = true;
+    else if (hasFocusedRef.current) fitGeometry(map, selectedEvent.geometry);
+    else hasFocusedRef.current = true;
     if (!selectedEvent.gdacsKey) {
-      setBoundaryState('unavailable');
+      if (['Polygon', 'MultiPolygon'].includes(selectedEvent.geometry?.type)) {
+        const collection = { type: 'FeatureCollection', features: [{ type: 'Feature', properties: { eventId: selectedEvent.id }, geometry: selectedEvent.geometry }] };
+        boundarySource?.setData(collection);
+        setBoundaryState('available');
+        setBoundaryFetchedAt(selectedEvent.updatedAt || selectedEvent.timestamp);
+        onBoundaryChangeRef.current?.({ state: 'available', eventId: selectedEvent.id, collection, fetchedAt: selectedEvent.updatedAt || selectedEvent.timestamp });
+      } else {
+        setBoundaryState('unavailable');
+        onBoundaryChangeRef.current?.({ state: 'unavailable', eventId: selectedEvent.id, collection: null, fetchedAt: null });
+      }
       return;
     }
     let active = true;
     setBoundaryState('loading');
+    onBoundaryChangeRef.current?.({ state: 'loading', eventId: selectedEvent.id, collection: null, fetchedAt: null });
     fetchBoundary(selectedEvent).then((boundary) => {
       if (!active) return;
       if (boundary?.collection?.features?.length) {
         boundarySource?.setData(boundary.collection);
         setBoundaryFetchedAt(boundary.fetchedAt);
         setBoundaryState('available');
+        onBoundaryChangeRef.current?.({ state: 'available', eventId: selectedEvent.id, collection: boundary.collection, fetchedAt: boundary.fetchedAt });
       } else {
         setBoundaryState('unavailable');
+        onBoundaryChangeRef.current?.({ state: 'unavailable', eventId: selectedEvent.id, collection: null, fetchedAt: null });
       }
-    }).catch(() => active && setBoundaryState('unavailable'));
+    }).catch(() => {
+      if (!active) return;
+      setBoundaryState('unavailable');
+      onBoundaryChangeRef.current?.({ state: 'unavailable', eventId: selectedEvent.id, collection: null, fetchedAt: null });
+    });
     return () => { active = false; };
-  }, [selectedEvent, ready]);
+  }, [selectedEvent, ready, variant, viewMode]);
 
   const toggle = (id) => setVisibility((current) => ({ ...current, [id]: !current[id] }));
 
   return (
-    <section className={`live-map live-map--${variant}`} aria-label="Interactive live disaster map">
+    <section className={`live-map live-map--${variant} ${ready ? 'is-ready' : ''}`} aria-label="Interactive live disaster map">
       <div ref={containerRef} className="live-map__canvas" />
-      {!ready && <div className="map-loading"><SpinnerGap size={20} className="spin" /> Loading geographic data</div>}
-      <div className="map-layer-panel" aria-label="Map layers">
+      {(!ready || (variant === 'hero' && showHeroLoader)) && <div className={`map-loading ${ready ? 'map-loading--leaving' : ''}`}><SpinnerGap size={20} className="spin" /> Loading geographic data</div>}
+      {showLayerPanel && <div className="map-layer-panel" aria-label="Map layers">
         <div className="map-layer-panel__head"><Crosshair size={16} /> Live layers</div>
         {Object.entries(SOURCE_COLORS).map(([id, color]) => (
           <button key={id} type="button" onClick={() => toggle(id)} className={visibility[id] ? 'is-on' : ''}>
@@ -248,7 +388,7 @@ export default function LiveMap({ events, selectedEvent, onSelect, variant = 'wo
           <span>Official evacuation routes</span>
           <b>Data unavailable</b>
         </div>
-      </div>
+      </div>}
       <div className="map-source-note">OpenFreeMap · OpenMapTiles · © OpenStreetMap contributors</div>
     </section>
   );
