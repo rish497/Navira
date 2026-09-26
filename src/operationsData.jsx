@@ -3,7 +3,8 @@ import { actorHeaders, useAuth } from './auth';
 
 const EMPTY = {
   helpRequests: [], locations: [], dispatches: [], resources: [], allocations: [],
-  infrastructure: [], simulations: [], evacuations: [], updatedAt: null,
+  infrastructure: [], simulations: [], evacuations: [], incidentReports: [],
+  communityEvents: [], notifications: [], updatedAt: null,
 };
 const OperationsContext = createContext(null);
 
@@ -25,6 +26,19 @@ export function OperationsProvider({ children }) {
   }, [profile]);
 
   useEffect(() => { refresh(); }, [refresh]);
+
+  useEffect(() => {
+    if (!profile) return undefined;
+    const poll = window.setInterval(() => {
+      if (document.visibilityState === 'visible') refresh();
+    }, 15000);
+    const onFocus = () => refresh();
+    window.addEventListener('focus', onFocus);
+    return () => {
+      window.clearInterval(poll);
+      window.removeEventListener('focus', onFocus);
+    };
+  }, [profile, refresh]);
 
   const mutate = useCallback(async (action, payload, method = 'POST') => {
     if (!profile) throw new Error('Sign in is required');

@@ -247,14 +247,14 @@ function assembleLiveData(results) {
     events,
     sources: results.map((result) => result.source),
     notices: {
-      routes: 'Data unavailable',
-      dispatch: 'Data unavailable',
-      resources: 'Data unavailable',
-      infrastructure: 'Data unavailable',
-      simulation: 'Data unavailable',
+      routes: 'OSRM road alternatives are available after a verified-area assessment and user-selected destination',
+      dispatch: 'Operator-entered assignments are available for verified civilian help requests',
+      resources: 'Operator-confirmed inventory and quantity-bounded allocations are available',
+      infrastructure: 'OpenStreetMap infrastructure import and operator-defined structures are available in the lab',
+      simulation: 'Controlled 3D hazard scenarios are available; outputs are simulations, not engineering verdicts',
       aiSummary: process.env.YOLO_AUTO_API_KEY || process.env.OPENAI_API_KEY
-        ? 'Yolo-Auto explanation available server-side'
-        : 'Data unavailable — no server-side AI API key configured',
+        ? 'Grounded Yolo-Auto explanations are available for completed route comparisons'
+        : 'AI explanation disabled — no server-side Yolo-Auto API key is configured',
     },
   };
 }
@@ -405,6 +405,20 @@ export async function getRoadRoutes({ startLng, startLat, endLng, endLat }) {
       distanceMeters: finiteNumber(route.distance),
       geometry,
       roadSummary: (route.legs || []).flatMap((leg) => leg.summary ? [leg.summary] : []).join(' · ') || null,
+      steps: (route.legs || []).flatMap((leg) => leg.steps || []).flatMap((step, stepIndex) => {
+        const location = step.maneuver?.location;
+        if (!Array.isArray(location) || location.length < 2 || !location.every(Number.isFinite)) return [];
+        return [{
+          id: `${index}:${stepIndex}`,
+          type: String(step.maneuver?.type || 'continue'),
+          modifier: step.maneuver?.modifier ? String(step.maneuver.modifier) : null,
+          name: step.name ? String(step.name).slice(0, 180) : null,
+          longitude: location[0],
+          latitude: location[1],
+          distanceMeters: finiteNumber(step.distance),
+          durationSeconds: finiteNumber(step.duration),
+        }];
+      }),
     }];
   });
   const data = {

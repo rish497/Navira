@@ -1,7 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-labelledby="title desc">
-  <title id="title">NAVIRA protected path mark</title>
-  <desc id="desc">Two structural planes form an N around a clear diagonal route.</desc>
-  <path fill="currentColor" d="M12 14h20v68H12zM64 14h20v68H64z"/>
-  <path fill="var(--mark-accent, currentColor)" d="M30 14h18l36 52v16H66L30 30z"/>
-  <path fill="var(--mark-cut, transparent)" d="M48 46l16 22V46L48 24z"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 110" role="img" aria-labelledby="title desc">
+  <title id="title">NAVIRA mark</title>
+  <desc id="desc">Two opposing structural planes crossed by a folded signal-red route form the letter N.</desc>
+  <path fill="currentColor" d="M0 0 30 28v54L0 110V0Z"/>
+  <path fill="currentColor" d="M120 0v110L90 82V28L120 0Z"/>
+  <path fill="var(--mark-accent, #ff3b1f)" d="M0 0h36l39 35v27L44 35 0 0Z"/>
+  <path fill="var(--mark-accent, #ff3b1f)" d="m44 35 76 75H82L44 75V35Z"/>
 </svg>

@@ -1,3 +1,13 @@
 export default function BrandMark({ compact = false }) {
-  return <span className={`brand-mark ${compact ? 'brand-mark--compact' : ''}`}><svg viewBox="0 0 40 40" aria-hidden="true"><path className="brand-mark__boundary" d="M5 34V7l4-4h5v31H5Z" /><path className="brand-mark__boundary" d="M26 3h9v27l-4 4h-5V3Z" /><path className="brand-mark__route" d="M12 3h6l10 18v16h-6L12 19V3Z" /></svg>{!compact && <strong>NAVIRA</strong>}</span>;
+  return (
+    <span className={`brand-mark ${compact ? 'brand-mark--compact' : ''}`}>
+      <svg viewBox="0 0 120 110" aria-hidden="true">
+        <path className="brand-mark__boundary" d="M0 0 30 28v54L0 110V0Z" />
+        <path className="brand-mark__boundary" d="M120 0v110L90 82V28L120 0Z" />
+        <path className="brand-mark__route" d="M0 0h36l39 35v27L44 35 0 0Z" />
+        <path className="brand-mark__route" d="m44 35 76 75H82L44 75V35Z" />
+      </svg>
+      {!compact && <strong>NAVIRA</strong>}
+    </span>
+  );
 }

@@ -17,6 +17,10 @@ const categorySearch = {
   other: { term: 'substation', radiusKm: 35, accept: (item) => (item.category === 'power' && ['plant', 'substation', 'generator'].includes(item.type)) || (/substation/i.test(item.displayName) && ['building', 'landuse'].includes(item.category)) },
 };
 
+function textQuery(value) {
+  return typeof value === 'string' ? value.replace(/[\u0000-\u001f]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 160) : '';
+}
+
 function parseNumericTag(value) {
   if (typeof value !== 'string' && typeof value !== 'number') return null;
   const match = String(value).replace(',', '.').match(/-?\d+(?:\.\d+)?/);
@@ -126,16 +130,15 @@ function queueNominatim(request) {
   return queued;
 }
 
-async function resolveSearchOrigin(country) {
-  const cached = originCache.get(country.cca2);
+async function resolveSearchOrigin(country, locationQuery = '') {
+  const requestedLocation = String(locationQuery || '').trim().slice(0, 160);
+  const originKey = `${country.cca2}:${requestedLocation.toLowerCase()}`;
+  const cached = originCache.get(originKey);
   if (cached) return cached;
-  const referencePlace = country.capital?.[0] || country.name.common;
-  const parameters = new URLSearchParams({
-    format: 'jsonv2',
-    limit: '1',
-    city: referencePlace,
-    countrycodes: country.cca2.toLowerCase(),
-  });
+  const referencePlace = requestedLocation || country.capital?.[0] || country.name.common;
+  const parameters = new URLSearchParams({ format: 'jsonv2', limit: '1', countrycodes: country.cca2.toLowerCase() });
+  if (requestedLocation) parameters.set('q', `${requestedLocation}, ${country.name.common}`);
+  else parameters.set('city', referencePlace);
   let origin;
   try {
     const results = await queueNominatim(() => fetchJson(`${NOMINATIM_ENDPOINT}?${parameters}`));
@@ -150,13 +153,13 @@ async function resolveSearchOrigin(country) {
     origin = { latitude: Number(country.latlng[0]), longitude: Number(country.latlng[1]), referencePlace: `${country.name.common} reference coordinate` };
   }
   if (!origin) throw new Error('Country search origin is unavailable');
-  originCache.set(country.cca2, origin);
+  originCache.set(originKey, origin);
   return origin;
 }
 
-async function searchNominatim(country, category) {
+async function searchNominatim(country, category, locationQuery = '') {
   const search = categorySearch[category];
-  const origin = await resolveSearchOrigin(country);
+  const origin = await resolveSearchOrigin(country, locationQuery);
   const latitudeSpan = search.radiusKm / 111;
   const longitudeSpan = Math.min(1.5, search.radiusKm / Math.max(20, 111 * Math.cos(origin.latitude * Math.PI / 180)));
   const viewbox = [
@@ -172,7 +175,7 @@ async function searchNominatim(country, category) {
     extratags: '1',
     namedetails: '1',
     dedupe: '1',
-    limit: '12',
+    limit: '30',
     polygon_threshold: '0.001',
     countrycodes: country.cca2.toLowerCase(),
     bounded: '1',
@@ -189,7 +192,7 @@ async function searchNominatim(country, category) {
     }))
     .map((feature) => normalizeFeature(feature, category))
     .filter((asset) => asset.center)
-    .slice(0, 12);
+    .slice(0, 30);
   return { assets, referencePlace: origin.referencePlace, radiusKm: search.radiusKm };
 }
 
@@ -207,20 +210,21 @@ export function getSimulationCountries() {
   };
 }
 
-export async function getSimulationInfrastructure({ country, category }) {
+export async function getSimulationInfrastructure({ country, category, query }) {
   const countryCode = String(country || '').toUpperCase();
   const selectedCategory = String(category || '').toLowerCase();
   if (!/^[A-Z]{2}$/.test(countryCode)) throw new Error('Choose a valid ISO 3166-1 country code');
   if (!categorySearch[selectedCategory]) throw new Error('Choose a supported infrastructure category');
   const countryRecord = countries.find((item) => item.cca2 === countryCode);
   if (!countryRecord) throw new Error('Country reference data is unavailable');
+  const locationQuery = textQuery(query);
 
-  const cacheKey = `${countryCode}:${selectedCategory}`;
+  const cacheKey = `${countryCode}:${selectedCategory}:${locationQuery.toLowerCase()}`;
   const cached = resultCache.get(cacheKey);
   if (cached && Date.now() - cached.savedAt < 60 * 60 * 1000) return cached.payload;
   if (inflight.has(cacheKey)) return inflight.get(cacheKey);
 
-  const task = searchNominatim(countryRecord, selectedCategory)
+  const task = searchNominatim(countryRecord, selectedCategory, locationQuery)
     .then(({ assets, referencePlace, radiusKm }) => {
       const retrievedAt = new Date().toISOString();
       const payload = {
@@ -234,7 +238,7 @@ export async function getSimulationInfrastructure({ country, category }) {
           dataset: 'OpenStreetMap search index via Nominatim',
           license: 'ODbL 1.0',
           attributionUrl: 'https://www.openstreetmap.org/copyright',
-          queryScope: `Up to 12 indexed results matching “${categorySearch[selectedCategory].term}” within approximately ${radiusKm} km of ${referencePlace}, ${countryRecord.name.common}. This is a bounded capital-area search, not a complete national infrastructure inventory.`,
+          queryScope: `Up to 30 indexed results matching “${categorySearch[selectedCategory].term}” within approximately ${radiusKm} km of ${referencePlace}, ${countryRecord.name.common}. This is a bounded local search, not a complete national infrastructure inventory.`,
         },
       };
       resultCache.set(cacheKey, { savedAt: Date.now(), payload });

@@ -5,7 +5,7 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { DotGlobe } from 'dot-globe';
 import {
-  ArrowRight, ArrowSquareOut, Broadcast, Buildings, CaretRight, ChartBar,
+  ArrowRight, ArrowSquareOut, BellRinging, Broadcast, CaretRight, ChartBar,
   ClockCounterClockwise, Database, Flask, ListBullets,
   MapTrifold, NewspaperClipping, Package, Path as RouteIcon, ShieldCheck,
   SignOut, SpinnerGap, UserFocus, UsersThree, WarningCircle, X,
@@ -16,6 +16,7 @@ import BrandMark from './BrandMark';
 import CivilianSafety from './CivilianSafety';
 import LoginPage from './LoginPage';
 import { useAuth } from './auth';
+import { useOperations } from './operationsData';
 import LocationFilter from './LocationFilter';
 import { eventDistanceKm } from './geo';
 import {
@@ -26,18 +27,21 @@ import {
 gsap.registerPlugin(ScrollTrigger);
 
 function navigationFor(role) {
-  const operations = role === 'operator'
-    ? [['local-map', 'Local operations', MapTrifold], ['requests', 'Help requests', UserFocus], ['evacuation', 'Evacuation', RouteIcon], ['dispatch', 'Dispatch', UsersThree], ['resources', 'Resources', Package], ['infrastructure', 'Infrastructure', Buildings], ['simulation', 'Simulation', Flask]]
-    : [['local-map', 'Near you', MapTrifold], ['requests', 'Request help', UserFocus], ['evacuation', 'Evacuation', RouteIcon]];
+  const understand = role === 'operator'
+    ? [['command', 'Response chain', Broadcast], ['events', 'Verified events', ListBullets], ['timeline', 'Source timeline', ClockCounterClockwise], ['analytics', 'Location analysis', ChartBar], ['news', 'News context', NewspaperClipping]]
+    : [['command', 'Response chain', Broadcast], ['map', 'Live disaster map', MapTrifold], ['events', 'Verified events', ListBullets], ['timeline', 'Source timeline', ClockCounterClockwise], ['analytics', 'Location analysis', ChartBar], ['news', 'News context', NewspaperClipping]];
+  const protect = role === 'operator'
+    ? [['local-map', 'People + hazards', MapTrifold], ['requests', 'Help requests', UserFocus], ['evacuation', 'Escape routes', RouteIcon], ['dispatch', 'Responder dispatch', UsersThree], ['resources', 'Resource coordination', Package]]
+    : [['local-map', 'Near you', MapTrifold], ['requests', 'Request help', UserFocus], ['evacuation', 'Escape routes', RouteIcon]];
   return [
-    { label: 'Observe', items: [['command', 'Command', Broadcast], ['map', 'Live map', MapTrifold], ['events', 'Event ledger', ListBullets]] },
-    { label: 'Context', items: [['timeline', 'Timeline', ClockCounterClockwise], ['analytics', 'Analytics', ChartBar], ['news', 'News context', NewspaperClipping]] },
-    { label: 'Operations', items: operations },
+    { label: '01 / Understand', items: understand },
+    { label: '02 / Protect', items: protect },
+    ...(role === 'operator' ? [{ label: '03 / Test', items: [['simulation', 'Simulation lab', Flask]] }] : []),
   ];
 }
 
 const PAGE_COPY = {
-  command: ['Live command picture', 'Agency event feeds, geographic evidence, and source condition in one operational view.'],
+  command: ['One disaster record. One response chain.', 'Understand the published event, identify people at risk, coordinate action, and carry the same evidence into infrastructure testing.'],
   map: ['Live geographic picture', 'Source-native geometry on a navigable, correctly proportioned world map.'],
   events: ['Event ledger', 'Every row comes directly from NASA EONET, GDACS, or USGS.'],
   timeline: ['Source chronology', 'A time-ordered record built only from timestamps published by the upstream sources.'],
@@ -82,14 +86,14 @@ function SourceRail({ sources, generatedAt, compact = false, reveal = false }) {
   return (
     <section className={`source-rail ${compact ? 'source-rail--compact' : ''} ${reveal ? 'source-rail--reveal' : ''}`} aria-label="Live source freshness">
       <div className="source-rail__intro"><Database size={19} /><div><strong>Source condition</strong><span>Retrieved {formatTime(generatedAt, { short: true })}</span></div></div>
-      {sources.map((source, index) => <a href={source.href} target="_blank" rel="noreferrer" key={source.id} className="source-rail__source" style={reveal ? { '--source-index': index } : undefined}><i className={source.status === 'available' ? 'is-live' : 'is-down'} /><div><strong>{source.name}</strong><span>{source.status === 'available' ? `${source.count} records · fetched ${formatTime(source.fetchedAt, { short: true })}` : 'Data unavailable'}</span></div><ArrowSquareOut size={15} /></a>)}
+      {sources.map((source, index) => <a href={source.href} target="_blank" rel="noreferrer" key={source.id} className="source-rail__source" style={reveal ? { '--source-index': index } : undefined}><i className={source.status === 'available' ? 'is-live' : 'is-down'} /><div><strong>{source.name}</strong><span>{source.status === 'available' ? `${source.count} records · fetched ${formatTime(source.fetchedAt, { short: true })}` : `Upstream feed did not respond · checked ${formatTime(source.fetchedAt, { short: true })}`}</span></div><ArrowSquareOut size={15} /></a>)}
     </section>
   );
 }
 
 function EventList({ events, selectedEvent, onSelect, limit }) {
   const visible = limit ? events.slice(0, limit) : events;
-  if (!visible.length) return <div className="empty-data"><strong>Data unavailable</strong><span>No event records were returned by the enabled sources.</span></div>;
+  if (!visible.length) return <div className="empty-data"><strong>No current source records returned</strong><span>Check Source condition for the retrieval status of NASA EONET, GDACS, and USGS.</span></div>;
   return <div className="event-list">{visible.map((event) => <button type="button" key={event.id} className={selectedEvent?.id === event.id ? 'is-selected' : ''} onClick={() => onSelect(event)}><i className={`event-signal event-signal--${eventTone(event)}`} /><span className="event-list__main"><strong>{event.title}</strong><small>{event.type} · {formatTime(event.timestamp, { short: true })}</small></span><SourceBadge source={event.source} /><CaretRight size={17} /></button>)}</div>;
 }
 
@@ -262,22 +266,22 @@ function Landing() {
     <main ref={root} className="landing-shell">
       <header className="landing-nav">
         <Link to="/" aria-label="NAVIRA home"><BrandMark /></Link>
-        <nav aria-label="Public navigation"><a href="#civilian">For people in danger</a><a href="#response">How response connects</a><a href="#sources">Data and sources</a></nav>
+        <nav aria-label="Public navigation"><a href="#understand">Understand</a><a href="#protect">Protect</a><a href="#test">Test</a></nav>
         <div><span className="live-word"><i /> LIVE DATA</span><Link className="landing-signin" to="/login">Sign in</Link><Link className="button button--dark" to="/login?role=civilian">Open NAVIRA <ArrowRight /></Link></div>
       </header>
 
-      <section className="hero-civic" aria-labelledby="hero-title">
+      <section className="hero-civic" id="understand" aria-labelledby="hero-title">
         <div className="hero-primary">
           <div className="hero-primary__copy">
             <p className="hero-signal"><i /> {events.length ? `${events.length} current source records` : 'Connecting to disaster sources'}</p>
-            <h1 id="hero-title"><span>Know the danger.</span><span>Find your way out.</span></h1>
-            <p className="hero-primary__body">NAVIRA brings live hazards and official guidance into one map for people in danger and the teams helping them.</p>
+            <h1 id="hero-title"><span>Understand the disaster.</span><span>Protect what matters.</span></h1>
+            <p className="hero-primary__body">NAVIRA carries a verified disaster record from detection to civilian escape, operator response, and infrastructure testing—without inventing what the sources do not know.</p>
             <div className="hero-actions"><Link className="button button--signal" to="/login?role=civilian">Enter civilian safety <ArrowRight /></Link><Link className="button button--ghost" to="/login?role=operator">Government operator access</Link></div>
           </div>
-          <div className="decision-strip" id="civilian">
-            <div className="decision-cell"><b>01</b><strong>Am I in danger?</strong><span>Inspect published hazards near your location.</span></div>
-            <div className="decision-cell"><b>02</b><strong>Where should I go?</strong><span>Use official destination guidance when a source provides it.</span></div>
-            <div className="decision-cell"><b>03</b><strong>How do I get there?</strong><span>Follow a route only when an authorized feed is connected.</span></div>
+          <div className="decision-strip">
+            <div className="decision-cell"><b>01 / UNDERSTAND</b><strong>What is happening?</strong><span>Read live source geography, severity, time, and status.</span></div>
+            <div className="decision-cell"><b>02 / PROTECT</b><strong>Who is at risk?</strong><span>Check verified danger areas, escape routes, and requests for help.</span></div>
+            <div className="decision-cell"><b>03 / TEST</b><strong>What can withstand it?</strong><span>Run honest infrastructure scenarios against the same hazard context.</span></div>
           </div>
         </div>
         <div className="hero-map-shell">
@@ -288,28 +292,29 @@ function Landing() {
       </section>
       <SourceRail sources={sources} generatedAt={data?.generatedAt} reveal />
 
-      <section className="civilian-brief section-reveal" aria-labelledby="civilian-title">
-        <div><span className="section-index">01 / CIVILIAN DECISIONS</span><h2 id="civilian-title">Location turns a disaster alert into a decision.</h2></div>
-        <div className="civilian-brief__body"><p>A headline says something happened. NAVIRA keeps the event attached to geography, time, severity, and its publishing source so a person can understand what is known nearby.</p><p>When an authority has not supplied a destination or route, NAVIRA says “Data unavailable.” It does not fill the gap with a guess.</p></div>
+      <section className="civilian-brief section-reveal" id="protect" aria-labelledby="civilian-title">
+        <div><span className="section-index">RESPONSE / CONTINUITY</span><h2 id="civilian-title">One verified event should move all the way to action.</h2></div>
+        <div className="civilian-brief__body"><p>NAVIRA starts with NASA EONET, GDACS, and USGS records, preserves their geography and source time, then checks whether a person’s shared location intersects an available warning area.</p><p>When the evidence qualifies, the same record can open escape routing, a help request, operator dispatch, resource allocation, and an infrastructure scenario. Missing facts remain explicit.</p></div>
       </section>
 
-      <section className="response-system" id="response" aria-labelledby="response-title">
+      <section className="response-system" id="test" aria-labelledby="response-title">
         <ResponseGlobe />
-        <div className="response-system__lead section-reveal"><span className="section-index">02 / SHARED RESPONSE</span><h2 id="response-title">One event moves through three hands.</h2></div>
+        <div className="response-system__lead section-reveal"><span className="section-index">SYSTEM / THREE PILLARS</span><h2 id="response-title">Three connected pillars. One disaster record.</h2></div>
         <div className="response-steps">
-          <article className="response-step"><b>PUBLIC</b><h3>See what is happening nearby.</h3><p>Current source records appear on a navigable map with published time, location, severity, and status.</p><Link to="/login?role=civilian">Enter civilian safety <ArrowRight /></Link></article>
-          <article className="response-step"><b>RESPONDERS</b><h3>Inspect the record behind the marker.</h3><p>Source links and geometry stay attached, so field context can be checked against the original agency record.</p><Link to="/login?role=operator">Enter operator workspace <ArrowRight /></Link></article>
-          <article className="response-step"><b>COMMAND</b><h3>Keep the wider picture accountable.</h3><p>Source condition, event chronology, analysis, and news context remain distinct and time-stamped.</p><Link to="/login?role=operator">Open command access <ArrowRight /></Link></article>
+          <article className="response-step response-step--understand"><b>01 / UNDERSTAND</b><h3>Detect and read the disaster.</h3><p>NASA EONET, GDACS, and USGS records retain their real geometry, timestamps, severity, source links, timeline, and reporting context.</p><Link to="/login">Open disaster intelligence <ArrowRight /></Link></article>
+          <article className="response-step response-step--protect"><b>02 / PROTECT</b><h3>Find risk and move people.</h3><p>Near You checks consented coordinates against verified geometry, then connects escape routing and help requests to dispatch and resources.</p><Link to="/login?role=civilian">Enter civilian safety <ArrowRight /></Link></article>
+          <article className="response-step response-step--test"><b>03 / TEST</b><h3>Stress infrastructure before the next event.</h3><p>Import mapped infrastructure or build a structure, apply controlled hazard scenarios, and compare simulated response without claiming an engineering verdict.</p><Link to="/login?role=operator">Open infrastructure lab <ArrowRight /></Link></article>
         </div>
       </section>
 
       <section className="response-flow section-reveal" aria-labelledby="flow-title">
-        <div className="response-flow__title"><span className="section-index">03 / RESPONSE FLOW</span><h2 id="flow-title">From published hazard to human action.</h2></div>
+        <div className="response-flow__title"><span className="section-index">RESPONSE / CHAIN</span><h2 id="flow-title">Disaster happens. Evidence moves. Action follows.</h2></div>
         <div className="response-flow__track">
-          <article><b>01</b><h3>Observe</h3><p>NASA EONET, GDACS, and USGS publish event data.</p></article>
-          <article><b>02</b><h3>Preserve</h3><p>NAVIRA retains source identity, time, geometry, and status.</p></article>
-          <article><b>03</b><h3>Coordinate</h3><p>Responders and command teams read from the same live picture.</p></article>
-          <article><b>04</b><h3>Guide</h3><p>Official routes and instructions appear only when connected.</p></article>
+          <article><b>01</b><h3>Detect</h3><p>Authoritative feeds publish the event and its available geography.</p></article>
+          <article><b>02</b><h3>Understand</h3><p>NAVIRA preserves source identity, time, severity, geometry, and status.</p></article>
+          <article><b>03</b><h3>Identify risk</h3><p>Consented locations are checked against source-supplied warning areas.</p></article>
+          <article><b>04</b><h3>Protect</h3><p>Qualified civilians can route, request help, and connect to operators.</p></article>
+          <article><b>05</b><h3>Test</h3><p>The hazard can inform transparent infrastructure simulation scenarios.</p></article>
         </div>
       </section>
 
@@ -317,7 +322,7 @@ function Landing() {
 
       <section className="trust-system" id="sources" aria-labelledby="trust-title">
         <div className="trust-system__lead"><span className="section-index">05 / DATA TRUST</span><h2 id="trust-title">Know what is live. Know what is missing.</h2></div>
-        <div className="trust-rules"><article><ShieldCheck /><h3>Agency records stay separate from reporting.</h3><p>GDACS news adds context, but it is never presented as verified incident fact.</p></article><article><MapTrifold /><h3>Geography keeps its real proportions.</h3><p>MapLibre renders OpenStreetMap-based geography with real zooming, panning, labels, and source-native geometry.</p></article><article><Database /><h3>Absence is shown plainly.</h3><p>Routes, dispatch units, resources, and infrastructure remain unavailable until authoritative systems are connected.</p></article></div>
+        <div className="trust-rules"><article><ShieldCheck /><h3>Agency records stay separate from reporting.</h3><p>GDACS news adds context, but it is never presented as verified incident fact.</p></article><article><MapTrifold /><h3>Geography keeps its real proportions.</h3><p>MapLibre renders OpenStreetMap-based geography with real zooming, panning, labels, and source-native geometry.</p></article><article><Database /><h3>Operational records identify their origin.</h3><p>Locations require consent. Stock and assignments identify operator input. Official orders require an authority feed. Simulation outputs remain simulation.</p></article></div>
       </section>
 
       <section className="landing-action section-reveal"><div><span className="section-index">LIVE RESPONSE MAP</span><h2>Choose the workspace that matches your responsibility.</h2></div><Link className="button button--paper" to="/login">Sign in to NAVIRA <ArrowRight /></Link></section>
@@ -339,7 +344,17 @@ function ModuleNavigation() {
 function WorkspaceHeader({ onMenu }) {
   const { data, loading, refresh } = useLiveData();
   const { profile } = useAuth();
-  return <><header className="workspace-header"><div className="workspace-header__brand"><button className="menu-button" onClick={onMenu} aria-label="Open navigation"><span /><span /></button><Link to="/" aria-label="NAVIRA home"><BrandMark /></Link></div><p>{profile.role === 'operator' ? `${profile.organization || 'Government'} response workspace` : 'Civilian safety workspace'}</p><button className="refresh-button" disabled={loading} onClick={refresh}>{loading ? <SpinnerGap className="spin" /> : <Broadcast />}<span>Refresh sources</span></button></header><div className="freshness-bar"><span key={data?.generatedAt || 'pending'} className="freshness-live"><i /> LIVE DATA</span><b>Last NAVIRA retrieval</b><time>{formatTime(data?.generatedAt, { short: true })}</time><small>Every record retains its source time</small></div></>;
+  return <><header className="workspace-header"><div className="workspace-header__brand"><button className="menu-button" onClick={onMenu} aria-label="Open navigation"><span /><span /></button><Link to="/" aria-label="NAVIRA home"><BrandMark /></Link></div><p>{profile.role === 'operator' ? `${profile.organization || 'Government'} response workspace` : 'Civilian safety workspace'}</p><button className="refresh-button" disabled={loading} onClick={refresh}>{loading ? <SpinnerGap className="spin" /> : <Broadcast />}<span>Refresh sources</span></button></header><div className="freshness-bar"><span key={data?.generatedAt || 'pending'} className="freshness-live"><i /> LIVE DATA</span><b>Last NAVIRA retrieval</b><time>{formatTime(data?.generatedAt, { short: true })}</time><small>Every record retains its source time</small><button className="freshness-refresh" disabled={loading} onClick={refresh}>{loading ? <SpinnerGap className="spin" /> : <Broadcast />}<span>Refresh</span></button></div></>;
+}
+
+function CivilianAlertBar() {
+  const { profile } = useAuth();
+  const { data, mutate } = useOperations();
+  const unread = data.notifications.filter((item) => item.status === 'unread');
+  if (profile.role !== 'civilian' || !unread.length) return null;
+  const alert = unread[0];
+  const markRead = () => mutate('notification-read', { id: alert.id }).catch(() => {});
+  return <aside className="civilian-alert-bar" role="status"><BellRinging /><div><span>OPERATOR-REVIEWED REPORT NEAR YOUR LOCATION</span><strong>{alert.title}</strong><p>{alert.message}</p><small>{alert.provenance}</small></div><div><Link to={`/safety?event=${encodeURIComponent(alert.eventId)}`} onClick={markRead}>Check safety routes <ArrowRight /></Link><button type="button" onClick={markRead}>Mark read</button>{unread.length > 1 && <small>+{unread.length - 1} more</small>}</div></aside>;
 }
 
 function PageIntro({ view }) {
@@ -349,7 +364,12 @@ function PageIntro({ view }) {
 
 function CommandView() {
   const { events, selectedEvent, selectEvent } = useLiveData();
-  return <><PageIntro view="command" /><div className="command-layout"><div className="command-layout__map"><LiveMap events={events} selectedEvent={selectedEvent} onSelect={selectEvent} variant="command" /></div><div className="command-layout__rail"><div className="rail-title"><span>LIVE QUEUE</span><b>{events.length} source records</b></div><EventList events={events} selectedEvent={selectedEvent} onSelect={selectEvent} limit={12} /></div><EventDetail key={selectedEvent?.id || 'empty'} event={selectedEvent} /></div></>;
+  const { profile } = useAuth();
+  const { data } = useOperations();
+  const activeRequests = data.helpRequests.filter((item) => item.status !== 'resolved').length;
+  const activeDispatches = data.dispatches.filter((item) => item.status !== 'complete').length;
+  const testRecords = data.infrastructure.length + data.simulations.length;
+  return <><PageIntro view="command" /><section className="command-chain" aria-label="NAVIRA response chain"><article><span>01 / UNDERSTAND</span><strong>{events.length}</strong><p>current verified source records</p><Link to="/app/map">Open live picture <ArrowRight /></Link></article><article><span>02 / PROTECT</span><strong>{activeRequests + data.evacuations.length + activeDispatches}</strong><p>{activeRequests} active requests · {data.evacuations.length} shared routes · {activeDispatches} active dispatches</p><Link to="/app/local-map">Open protection flow <ArrowRight /></Link></article><article><span>03 / TEST</span><strong>{testRecords}</strong><p>{data.infrastructure.length} recorded assets · {data.simulations.length} saved simulations</p>{profile.role === 'operator' ? <Link to="/app/simulation">Open simulation lab <ArrowRight /></Link> : <small>Operator workspace</small>}</article></section><div className="command-layout"><div className="command-layout__map"><LiveMap events={events} selectedEvent={selectedEvent} onSelect={selectEvent} variant="command" /></div><div className="command-layout__rail"><div className="rail-title"><span>LIVE QUEUE</span><b>{events.length} source records</b></div><EventList events={events} selectedEvent={selectedEvent} onSelect={selectEvent} limit={12} /></div><EventDetail key={selectedEvent?.id || 'empty'} event={selectedEvent} /></div></>;
 }
 
 function MapView() {
@@ -381,7 +401,7 @@ function LedgerView() {
 
 function TimelineView() {
   const { events, selectEvent } = useLiveData();
-  return <><PageIntro view="timeline" /><div className="timeline-records">{events.length ? events.map((event) => <button key={event.id} onClick={() => selectEvent(event)}><time>{formatTime(event.timestamp)}</time><i className={`event-signal event-signal--${eventTone(event)}`} /><div><SourceBadge source={event.source} /><strong>{event.title}</strong><span>{event.type} · {event.status}</span></div><ArrowRight /></button>) : <div className="empty-data"><strong>Data unavailable</strong></div>}</div></>;
+  return <><PageIntro view="timeline" /><div className="timeline-records">{events.length ? events.map((event) => <button key={event.id} onClick={() => selectEvent(event)}><time>{formatTime(event.timestamp)}</time><i className={`event-signal event-signal--${eventTone(event)}`} /><div><SourceBadge source={event.source} /><strong>{event.title}</strong><span>{event.type} · {event.status}</span></div><ArrowRight /></button>) : <div className="empty-data"><strong>No source chronology was returned</strong><span>The timeline is built directly from NASA EONET, GDACS, and USGS timestamps. Refresh the feeds or inspect Source condition to see which upstream service did not respond.</span></div>}</div></>;
 }
 
 function AnalyticsView() {
@@ -393,7 +413,7 @@ function AnalyticsView() {
   const byType = useMemo(() => Object.entries(visibleEvents.reduce((acc, event) => ({ ...acc, [event.type]: (acc[event.type] || 0) + 1 }), {})).sort((a, b) => b[1] - a[1]), [visibleEvents]);
   const max = Math.max(1, ...byType.map(([, count]) => count));
   const sourceCount = (id) => visibleEvents.filter((event) => event.source.id === id).length;
-  return <><PageIntro view="analytics" /><LocationFilter value={location} radiusKm={radiusKm} onChange={setLocation} onRadiusChange={setRadiusKm} /><div className="analytics-scope"><strong>{visibleEvents.length}</strong><span>published records {location ? `within ${radiusKm.toLocaleString()} km of ${location.label}` : 'worldwide'}</span></div><section className="analytics-sheet"><div className="analytics-sheet__sources"><h2>Records by source</h2>{sources.map((source) => <div key={source.id}><SourceBadge source={source} /><strong>{source.status === 'available' ? sourceCount(source.id) : 'Data unavailable'}</strong><span>Fetched {formatTime(source.fetchedAt)}</span></div>)}</div><div className="analytics-sheet__types"><h2>Published event types</h2>{byType.length ? byType.map(([type, count]) => <div className="type-bar" key={type}><span>{type}</span><i><b style={{ width: `${(count / max) * 100}%` }} /></i><strong>{count}</strong></div>) : <div className="empty-data"><strong>No records in this area</strong><span>Try a wider analysis radius.</span></div>}<p>Location filtering measures each record’s published geometry against the selected place. Counts do not estimate impact, people affected, or risk.</p></div></section></>;
+  return <><PageIntro view="analytics" /><LocationFilter value={location} radiusKm={radiusKm} onChange={setLocation} onRadiusChange={setRadiusKm} /><div className="analytics-scope"><strong>{visibleEvents.length}</strong><span>published records {location ? `within ${radiusKm.toLocaleString()} km of ${location.label}` : 'worldwide'}</span></div><section className="analytics-sheet"><div className="analytics-sheet__sources"><h2>Records by source</h2>{sources.map((source) => <div key={source.id}><SourceBadge source={source} /><strong>{source.status === 'available' ? sourceCount(source.id) : 'Feed unavailable'}</strong><span>{source.status === 'available' ? 'Fetched' : 'Last checked'} {formatTime(source.fetchedAt)}</span></div>)}</div><div className="analytics-sheet__types"><h2>Published event types</h2>{byType.length ? byType.map(([type, count]) => <div className="type-bar" key={type}><span>{type}</span><i><b style={{ width: `${(count / max) * 100}%` }} /></i><strong>{count}</strong></div>) : <div className="empty-data"><strong>No records in this area</strong><span>Try a wider analysis radius.</span></div>}<p>Location filtering measures each record’s published geometry against the selected place. Counts do not estimate impact, people affected, or risk.</p></div></section></>;
 }
 
 function NewsView() {
@@ -429,7 +449,7 @@ function WorkspacePage() {
 
 function Workspace() {
   const [navOpen, setNavOpen] = useState(false);
-  return <div className="workspace-shell"><SideNavigation open={navOpen} onClose={() => setNavOpen(false)} /><ModuleNavigation /><div className="workspace-surface"><WorkspaceHeader onMenu={() => setNavOpen(true)} /><Routes><Route path=":view" element={<WorkspacePage />} /><Route path="*" element={<Navigate to="command" replace />} /></Routes></div></div>;
+  return <div className="workspace-shell"><SideNavigation open={navOpen} onClose={() => setNavOpen(false)} /><ModuleNavigation /><div className="workspace-surface"><WorkspaceHeader onMenu={() => setNavOpen(true)} /><CivilianAlertBar /><Routes><Route path=":view" element={<WorkspacePage />} /><Route path="*" element={<Navigate to="command" replace />} /></Routes></div></div>;
 }
 
 function ProtectedRoute({ children }) {

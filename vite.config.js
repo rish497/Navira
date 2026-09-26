@@ -10,10 +10,12 @@ import {
 } from './src/server/liveData.js';
 import {
   actorFromRequest, createAllocation, createDispatch, createEvacuation, createHelpRequest,
-  createInfrastructure, createResource, createSimulation, getOperations, updateDispatch,
-  updateHelpRequest, updateInfrastructure, updateLocation, verifyHelpLocation,
+  createIncidentReport, createInfrastructure, createResource, createSimulation, getCommunityEvent,
+  getOperations, markNotificationRead, reviewIncidentReport, updateDispatch, updateHelpRequest,
+  updateInfrastructure, updateLocation, verifyHelpLocation,
 } from './src/server/operations.js';
 import { getSimulationCountries, getSimulationInfrastructure } from './src/server/simulationData.js';
+import { generateStructureModel, getStructureEvidence } from './src/server/structureModel.js';
 
 function sendJson(response, status, body) {
   response.statusCode = status;
@@ -66,22 +68,33 @@ function liveDataPlugin() {
         if (url.pathname === '/simulation/infrastructure' && request.method === 'GET') {
           return sendJson(response, 200, await getSimulationInfrastructure(Object.fromEntries(url.searchParams)));
         }
+        if (url.pathname === '/simulation/model-evidence' && request.method === 'POST') {
+          return sendJson(response, 200, await getStructureEvidence(await readJsonBody(request, 128 * 1024)));
+        }
+        if (url.pathname === '/simulation/model-generate' && request.method === 'POST') {
+          return sendJson(response, 200, await generateStructureModel(await readJsonBody(request, 24 * 1024 * 1024)));
+        }
         if (url.pathname === '/operations' && request.method === 'GET') {
           return sendJson(response, 200, await getOperations(actorFromRequest(request)));
         }
         if (url.pathname.startsWith('/operations/') && request.method === 'POST') {
           const actor = actorFromRequest(request);
-          const body = await readJsonBody(request);
           const action = url.pathname.slice('/operations/'.length);
+          const body = await readJsonBody(request, action === 'incident-report' ? 5 * 1024 * 1024 : 64 * 1024);
           if (action === 'location') return sendJson(response, 200, await updateLocation(actor, body));
           if (action === 'help') {
             const live = await getLiveData();
-            const event = live.events.find((item) => item.id === body.eventId);
+            const event = live.events.find((item) => item.id === body.eventId) || await getCommunityEvent(body.eventId);
             if (!event) throw new Error('The selected live event is no longer available');
             const boundary = event.gdacsKey ? await getGdacsGeometry(event.gdacsKey).catch(() => null) : null;
-            if (!verifyHelpLocation(body, event, boundary?.data)) throw new Error('Help requests unlock only when the shared location intersects verified source geometry');
+            if (!verifyHelpLocation(body, event, boundary?.data)) throw new Error(event.operatorDefinedArea
+              ? 'Help requests unlock only when the shared location intersects the operator-defined notification area'
+              : 'Help requests unlock only when the shared location intersects verified source geometry');
             return sendJson(response, 200, await createHelpRequest(actor, body, event));
           }
+          if (action === 'incident-report') return sendJson(response, 200, await createIncidentReport(actor, body));
+          if (action === 'incident-review') return sendJson(response, 200, await reviewIncidentReport(actor, body));
+          if (action === 'notification-read') return sendJson(response, 200, await markNotificationRead(actor, body));
           if (action === 'help-status') return sendJson(response, 200, await updateHelpRequest(actor, body));
           if (action === 'dispatch') return sendJson(response, 200, await createDispatch(actor, body));
           if (action === 'dispatch-status') return sendJson(response, 200, await updateDispatch(actor, body));

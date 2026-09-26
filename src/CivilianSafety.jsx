@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft,
   ArrowRight,
+  BellRinging,
   Broadcast,
   CheckCircle,
   Crosshair,
@@ -80,17 +81,17 @@ function Assessment({ event, boundary, assessment, onPlan }) {
       <div className="safety-assessment__result">
         {loading ? <SpinnerGap className="spin" /> : assessment.state === 'inside' ? <Warning /> : assessment.state === 'outside' ? <CheckCircle /> : <Database />}
         <div>
-          <strong>{loading ? 'Checking verified area' : assessment.state === 'inside' ? 'Inside verified warning area' : assessment.state === 'outside' ? 'Outside verified warning area' : 'Risk area cannot be determined'}</strong>
+          <strong>{loading ? 'Checking verified area' : assessment.state === 'inside' ? event.operatorDefinedArea ? 'Inside operator notification area' : 'Inside verified warning area' : assessment.state === 'outside' ? event.operatorDefinedArea ? 'Outside operator notification area' : 'Outside verified warning area' : 'Risk area cannot be determined'}</strong>
           <p>{loading ? 'Retrieving source geometry from GDACS.' : assessment.message}</p>
         </div>
       </div>
       <dl>
-        <div><dt>Source geometry</dt><dd>{boundary.state === 'available' ? 'Verified area available' : event.geometryKind || 'Data unavailable'}</dd></div>
+        <div><dt>Geographic basis</dt><dd>{event.operatorDefinedArea ? `Operator-defined ${event.notificationRadiusKm} km notification area` : boundary.state === 'available' ? 'Verified source area available' : event.geometryKind || 'Data unavailable'}</dd></div>
         <div><dt>Distance</dt><dd>{assessment.state === 'inside' ? 'Inside verified area' : Number.isFinite(assessment.distanceKm) ? formatDistance(assessment.distanceKm) : 'Data unavailable'}</dd></div>
-        <div><dt>Source record</dt><dd><a href={event.sourceUrl} target="_blank" rel="noreferrer">Open original record</a></dd></div>
+        <div><dt>Source record</dt><dd>{event.sourceUrl ? <a href={event.sourceUrl} target="_blank" rel="noreferrer">Open original record</a> : 'Civilian image reviewed by an operator'}</dd></div>
       </dl>
       {assessment.routeAllowed && <button type="button" className="safety-primary-action" onClick={onPlan}><NavigationArrow /> Plan escape route</button>}
-      {!assessment.routeAllowed && !loading && <p className="safety-assessment__limit">NAVIRA does not create a hazard radius from a point or unlock escape routing outside a verified area.</p>}
+      {!assessment.routeAllowed && !loading && <p className="safety-assessment__limit">{event.operatorDefinedArea ? 'This operator-defined notification area is not an official hazard boundary. Route planning unlocks only for locations inside the stated area.' : 'NAVIRA does not create a hazard radius from a point or unlock escape routing outside a verified area.'}</p>}
     </section>
   );
 }
@@ -110,11 +111,52 @@ function DestinationSearch({ destination, query, onQuery, state, onSearch, onSel
   );
 }
 
-function HelpRequestForm({ onSubmit, state }) {
-  return <section className="help-request-form"><div className="safety-step-heading"><span>Request help</span><h2>Tell operators what you need.</h2><p>Your location qualifies because it intersects source-supplied hazard geometry. NAVIRA rechecks that intersection on the server before accepting the request.</p></div><form onSubmit={onSubmit}><label>Type of help<select name="need" required><option value="Medical assistance">Medical assistance</option><option value="Rescue or extraction">Rescue or extraction</option><option value="Transport">Transport</option><option value="Food or water">Food or water</option><option value="Shelter">Shelter</option><option value="Accessibility support">Accessibility support</option></select></label><label>People needing help<input name="people" type="number" min="1" max="500" defaultValue="1" required /></label><label>Details<textarea name="details" rows="3" placeholder="Describe immediate needs without adding sensitive information you do not want operators to see." /></label><button type="submit" className="safety-primary-action" disabled={state.loading}>{state.loading ? <SpinnerGap className="spin" /> : <Warning />} Send verified help request</button>{state.error && <p className="safety-inline-error" role="alert">{state.error}</p>}{state.success && <p className="safety-inline-success" role="status">{state.success}</p>}</form></section>;
+function HelpRequestForm({ onSubmit, state, operatorDefined = false }) {
+  return <section className="help-request-form"><div className="safety-step-heading"><span>Request help</span><h2>Tell operators what you need.</h2><p>{operatorDefined ? 'Your location intersects an operator-defined notification area for a reviewed community report. NAVIRA rechecks that intersection on the server and records its basis.' : 'Your location qualifies because it intersects source-supplied hazard geometry. NAVIRA rechecks that intersection on the server before accepting the request.'}</p></div><form onSubmit={onSubmit}><label>Type of help<select name="need" required><option value="Medical assistance">Medical assistance</option><option value="Rescue or extraction">Rescue or extraction</option><option value="Transport">Transport</option><option value="Food or water">Food or water</option><option value="Shelter">Shelter</option><option value="Accessibility support">Accessibility support</option></select></label><label>People needing help<input name="people" type="number" min="1" max="500" defaultValue="1" required /></label><label>Details<textarea name="details" rows="3" placeholder="Describe immediate needs without adding sensitive information you do not want operators to see." /></label><button type="submit" className="safety-primary-action" disabled={state.loading}>{state.loading ? <SpinnerGap className="spin" /> : <Warning />} Send verified help request</button>{state.error && <p className="safety-inline-error" role="alert">{state.error}</p>}{state.success && <p className="safety-inline-success" role="status">{state.success}</p>}</form></section>;
 }
 
-function RouteLedger({ routing, selectedRouteId, onSelect, onExplain, onShare, aiState, shareState }) {
+function routeInstruction(step) {
+  if (!step) return 'Continue on the selected route';
+  const road = step.name ? ` ${step.name}` : '';
+  if (step.type === 'depart') return `Start on${road || ' the highlighted road'}`;
+  if (step.type === 'arrive') return 'Arrive at the selected destination';
+  if (step.type === 'turn') return `Turn${step.modifier ? ` ${step.modifier}` : ''}${road ? ` onto${road}` : ''}`;
+  if (step.type === 'roundabout' || step.type === 'rotary') return `Enter the roundabout${road ? ` toward${road}` : ''}`;
+  if (step.type === 'merge') return `Merge${step.modifier ? ` ${step.modifier}` : ''}${road ? ` onto${road}` : ''}`;
+  if (step.type === 'fork') return `Keep${step.modifier ? ` ${step.modifier}` : ''}${road ? ` toward${road}` : ''}`;
+  return `Continue${step.modifier ? ` ${step.modifier}` : ''}${road ? ` on${road}` : ''}`;
+}
+
+function RouteGuidance({ route, location, active, onStart, onStop, onLocation }) {
+  const [stepIndex, setStepIndex] = useState(0);
+  const [gpsError, setGpsError] = useState(null);
+  const steps = route?.steps || [];
+  const step = steps[Math.min(stepIndex, Math.max(0, steps.length - 1))];
+  const distanceKm = step && location ? eventDistanceKm(location, { geometry: { type: 'Point', coordinates: [step.longitude, step.latitude] } }) : null;
+
+  useEffect(() => {
+    if (!active || !navigator.geolocation) return undefined;
+    setGpsError(null);
+    const watch = navigator.geolocation.watchPosition((position) => onLocation({
+      longitude: position.coords.longitude,
+      latitude: position.coords.latitude,
+      accuracy: position.coords.accuracy,
+      timestamp: position.timestamp,
+    }), (error) => setGpsError(locationErrorMessage(error)), { enableHighAccuracy: true, timeout: 15000, maximumAge: 3000 });
+    return () => navigator.geolocation.clearWatch(watch);
+  }, [active, onLocation]);
+
+  useEffect(() => {
+    if (!active || !Number.isFinite(distanceKm) || distanceKm > .055 || stepIndex >= steps.length - 1) return;
+    setStepIndex((current) => Math.min(current + 1, steps.length - 1));
+  }, [active, distanceKm, stepIndex, steps.length]);
+
+  useEffect(() => { setStepIndex(0); }, [route?.id]);
+  if (!route) return null;
+  return <section className={`route-guidance ${active ? 'is-active' : ''}`} aria-live="polite"><div className="route-guidance__turn"><NavigationArrow weight="fill" /><div><span>{active ? Number.isFinite(distanceKm) ? `${formatDistance(distanceKm)} to next instruction` : 'Waiting for GPS' : 'LIVE ROAD GUIDANCE'}</span><strong>{routeInstruction(step)}</strong><small>{step?.distanceMeters ? `${formatRouteDistance(step.distanceMeters)} on this step` : route.roadSummary || 'OSRM road route'}</small></div></div><div className="route-guidance__meta"><span><b>{formatDuration(route.durationSeconds)}</b> estimated route time</span><span><b>{formatRouteDistance(route.distanceMeters)}</b> total distance</span></div>{gpsError && <p className="safety-inline-error">{gpsError}</p>}<p className="route-guidance__warning">Road data can change. Follow closures, emergency personnel, and local traffic signs over NAVIRA guidance.</p>{active ? <button type="button" onClick={onStop}>Stop guidance</button> : <button type="button" onClick={onStart}><NavigationArrow /> Start live guidance</button>}</section>;
+}
+
+function RouteLedger({ routing, selectedRouteId, onSelect, onExplain, onShare, onNavigate, operatorDefined = false, aiState, shareState }) {
   if (routing.loading) return <section className="route-loading" aria-live="polite"><SpinnerGap className="spin" /><div><strong>Comparing road routes</strong><span>OSRM is calculating alternatives from OpenStreetMap road data.</span></div></section>;
   if (routing.error) return <p className="safety-inline-error" role="alert">{routing.error}</p>;
   if (!routing.routes.length) return null;
@@ -124,24 +166,25 @@ function RouteLedger({ routing, selectedRouteId, onSelect, onExplain, onShare, a
     if (route.role === 'safer' && fastest) {
       const exposureDifference = Math.max(0, fastest.exposureMeters - route.exposureMeters);
       const timeDifference = Math.round((route.durationSeconds - fastest.durationSeconds) / 60);
-      return `${formatRouteDistance(exposureDifference)} less overlap with verified hazard areas${timeDifference > 0 ? ` for ${timeDifference} additional min` : ''}.`;
+      return `${formatRouteDistance(exposureDifference)} less overlap with ${operatorDefined ? 'the operator alert area' : 'verified hazard areas'}${timeDifference > 0 ? ` for ${timeDifference} additional min` : ''}.`;
     }
-    return 'This alternative does not reduce verified hazard exposure below the fastest route.';
+    return `This alternative does not reduce ${operatorDefined ? 'operator alert-area' : 'verified hazard'} exposure below the fastest route.`;
   };
   return (
     <section className="route-comparison">
-      <div className="safety-step-heading"><span>Routes</span><h2>Compare time with verified exposure.</h2><p>“Safer” appears only when an OSRM alternative has less overlap with source-supplied hazard geometry than the fastest route.</p></div>
+      <div className="safety-step-heading"><span>Routes</span><h2>Compare time with mapped exposure.</h2><p>{operatorDefined ? 'Lower exposure refers only to this operator-defined notification area. It is not an official safety determination.' : '“Safer” appears only when an OSRM alternative has less overlap with source-supplied hazard geometry than the fastest route.'}</p></div>
       <div className="route-ledger">
         {routing.routes.map((route) => <button type="button" key={route.id} onClick={() => onSelect(route.id)} className={selectedRouteId === route.id ? 'is-selected' : ''}>
-          <span className={`route-role route-role--${route.role}`}>{route.role === 'safer' ? 'Safer · lower exposure' : route.role}</span>
+          <span className={`route-role route-role--${route.role}`}>{route.role === 'safer' ? operatorDefined ? 'Lower alert-area exposure' : 'Safer · lower exposure' : route.role}</span>
           <strong>{formatDuration(route.durationSeconds)}</strong>
-          <dl><div><dt>Distance</dt><dd>{formatRouteDistance(route.distanceMeters)}</dd></div><div><dt>Verified exposure</dt><dd>{formatRouteDistance(route.exposureMeters)}</dd></div><div><dt>Hazards encountered</dt><dd>{route.hazardsEncountered.length ? route.hazardsEncountered.map((item) => item.title).join(', ') : 'None in connected polygon data'}</dd></div><div><dt>Hazards avoided</dt><dd>{route.hazardsAvoided.length ? route.hazardsAvoided.map((item) => item.title).join(', ') : 'No verified difference'}</dd></div><div className="route-reason"><dt>Why it differs</dt><dd>{reason(route)}</dd></div></dl>
+          <dl><div><dt>Distance</dt><dd>{formatRouteDistance(route.distanceMeters)}</dd></div><div><dt>{operatorDefined ? 'Alert-area exposure' : 'Verified exposure'}</dt><dd>{formatRouteDistance(route.exposureMeters)}</dd></div><div><dt>Areas encountered</dt><dd>{route.hazardsEncountered.length ? route.hazardsEncountered.map((item) => item.title).join(', ') : 'None in connected polygon data'}</dd></div><div><dt>Areas avoided</dt><dd>{route.hazardsAvoided.length ? route.hazardsAvoided.map((item) => item.title).join(', ') : 'No mapped difference'}</dd></div><div className="route-reason"><dt>Why it differs</dt><dd>{reason(route)}</dd></div></dl>
         </button>)}
       </div>
-      {!routing.saferId && <p className="route-comparison__notice">OSRM did not return an alternative with lower verified hazard exposure. NAVIRA will not label an alternative “safer.”</p>}
+      {!routing.saferId && <p className="route-comparison__notice">OSRM did not return an alternative with lower {operatorDefined ? 'operator alert-area' : 'verified hazard'} exposure. NAVIRA will not label an alternative “safer.”</p>}
       <div className="route-provenance"><span>Road routing: OSRM · OpenStreetMap</span><span>Retrieved {new Date(routing.fetchedAt).toLocaleString()}</span></div>
       <button className="ai-explain-button" type="button" onClick={onExplain} disabled={aiState.loading}>{aiState.loading ? <SpinnerGap className="spin" /> : <Robot />}<span>{aiState.loading ? 'Explaining verified differences' : 'Explain why the routes differ'}</span></button>
       <button className="share-route-button" type="button" onClick={onShare} disabled={shareState.loading}>{shareState.loading ? <SpinnerGap className="spin" /> : <Broadcast />}<span>Share selected route with operations</span></button>
+      <button className="route-navigate-button" type="button" onClick={onNavigate}><NavigationArrow /><span>Open live driving guidance</span></button>
       {shareState.error && <p className="safety-inline-error" role="alert">{shareState.error}</p>}
       {shareState.success && <p className="safety-inline-success" role="status">{shareState.success}</p>}
       {aiState.error && <p className="safety-inline-error" role="alert">{aiState.error}</p>}
@@ -152,8 +195,10 @@ function RouteLedger({ routing, selectedRouteId, onSelect, onExplain, onShare, a
 
 export default function CivilianSafety() {
   const { profile } = useAuth();
-  const { mutate } = useOperations();
+  const { data: operations, mutate } = useOperations();
   const { data, events, sources, loading, error, selectedEvent, selectEvent, refresh } = useLiveData();
+  const [searchParams] = useSearchParams();
+  const [communitySelectedId, setCommunitySelectedId] = useState(null);
   const [mode, setMode] = useState('world');
   const [locationState, setLocationState] = useState({ status: 'idle', error: null });
   const [location, setLocation] = useState(null);
@@ -164,33 +209,42 @@ export default function CivilianSafety() {
   const [searchState, setSearchState] = useState({ loading: false, items: [], error: null });
   const [routing, setRouting] = useState({ loading: false, routes: [], fastestId: null, saferId: null, fetchedAt: null, error: null });
   const [selectedRouteId, setSelectedRouteId] = useState(null);
+  const [guidanceRouteId, setGuidanceRouteId] = useState(null);
   const [aiState, setAiState] = useState({ loading: false, explanation: null, model: null, error: null });
   const [helpState, setHelpState] = useState({ loading: false, error: null, success: null });
   const [shareState, setShareState] = useState({ loading: false, error: null, success: null });
-  const initializedNear = useRef(false);
+  const openedNotificationEvent = useRef(null);
 
   useEffect(() => {
     document.body.classList.add('civilian-mode');
     return () => document.body.classList.remove('civilian-mode');
   }, []);
 
-  const nearbyEvents = useMemo(() => location ? events.map((event) => ({ event, distanceKm: eventDistanceKm(location, event) })).filter((item) => Number.isFinite(item.distanceKm)).sort((a, b) => a.distanceKm - b.distanceKm) : [], [events, location]);
-  const boundaryCollection = boundary.eventId === selectedEvent?.id ? boundary.collection : null;
-  const assessment = useMemo(() => assessVerifiedArea(location, selectedEvent, boundaryCollection), [location, selectedEvent, boundaryCollection]);
+  const safetyEvents = useMemo(() => [...events, ...operations.communityEvents], [events, operations.communityEvents]);
+  const communitySelected = operations.communityEvents.find((event) => event.id === communitySelectedId) || null;
+  const activeEvent = communitySelected || selectedEvent;
+  const selectSafetyEvent = (value) => {
+    const id = value?.id || value;
+    const community = operations.communityEvents.find((event) => event.id === id);
+    if (community) {
+      setCommunitySelectedId(community.id);
+      selectEvent(null);
+    } else {
+      setCommunitySelectedId(null);
+      selectEvent(value);
+    }
+  };
+  const nearbyEvents = useMemo(() => location ? safetyEvents.map((event) => ({ event, distanceKm: eventDistanceKm(location, event) })).filter((item) => Number.isFinite(item.distanceKm)).sort((a, b) => a.distanceKm - b.distanceKm) : [], [safetyEvents, location]);
+  const boundaryCollection = boundary.eventId === activeEvent?.id ? boundary.collection : null;
+  const assessment = useMemo(() => assessVerifiedArea(location, activeEvent, boundaryCollection), [location, activeEvent, boundaryCollection]);
   const routeHazards = useMemo(() => {
     const hazards = new Map();
-    events.forEach((event) => {
+    safetyEvents.forEach((event) => {
       if (['Polygon', 'MultiPolygon'].includes(event.geometry?.type)) hazards.set(event.id, { id: event.id, title: event.title, geometry: event.geometry });
     });
-    assessment.boundaries?.features.forEach((feature, index) => hazards.set(`${selectedEvent?.id}:verified:${index}`, { id: `${selectedEvent?.id}:verified:${index}`, title: selectedEvent?.title || 'Selected verified area', geometry: feature.geometry }));
+    assessment.boundaries?.features.forEach((feature, index) => hazards.set(`${activeEvent?.id}:verified:${index}`, { id: `${activeEvent?.id}:verified:${index}`, title: activeEvent?.title || 'Selected verified area', geometry: feature.geometry }));
     return [...hazards.values()];
-  }, [events, assessment.boundaries, selectedEvent]);
-
-  useEffect(() => {
-    if (mode !== 'near' || !location || !nearbyEvents.length || initializedNear.current) return;
-    initializedNear.current = true;
-    selectEvent(nearbyEvents[0].event);
-  }, [mode, location, nearbyEvents, selectEvent]);
+  }, [safetyEvents, assessment.boundaries, activeEvent]);
 
   useEffect(() => {
     setPlanOpen(false);
@@ -199,13 +253,18 @@ export default function CivilianSafety() {
     setSearchState({ loading: false, items: [], error: null });
     setRouting({ loading: false, routes: [], fastestId: null, saferId: null, fetchedAt: null, error: null });
     setSelectedRouteId(null);
+    setGuidanceRouteId(null);
     setAiState({ loading: false, explanation: null, model: null, error: null });
     setHelpState({ loading: false, error: null, success: null });
     setShareState({ loading: false, error: null, success: null });
-  }, [selectedEvent?.id]);
+  }, [activeEvent?.id]);
 
-  const requestLocation = () => {
+  const requestLocation = (preserveSelection = false) => {
     setMode('near');
+    if (preserveSelection !== true) {
+      setCommunitySelectedId(null);
+      selectEvent(null);
+    }
     if (location) {
       setLocation({ ...location });
       return;
@@ -216,7 +275,6 @@ export default function CivilianSafety() {
     }
     setLocationState({ status: 'requesting', error: null });
     navigator.geolocation.getCurrentPosition(async (position) => {
-      initializedNear.current = false;
       const next = { longitude: position.coords.longitude, latitude: position.coords.latitude, accuracy: position.coords.accuracy, timestamp: position.timestamp };
       setLocation(next);
       try {
@@ -227,6 +285,16 @@ export default function CivilianSafety() {
       }
     }, (reason) => setLocationState({ status: reason.code === 1 ? 'denied' : 'unavailable', error: locationErrorMessage(reason) }), { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 });
   };
+
+  useEffect(() => {
+    const requestedEvent = searchParams.get('event');
+    if (!requestedEvent || openedNotificationEvent.current === requestedEvent || !operations.communityEvents.some((event) => event.id === requestedEvent)) return;
+    openedNotificationEvent.current = requestedEvent;
+    setCommunitySelectedId(requestedEvent);
+    selectEvent(null);
+    setPlanOpen(true);
+    requestLocation(true);
+  }, [searchParams, operations.communityEvents]);
 
   const searchDestination = async (event) => {
     event.preventDefault();
@@ -250,6 +318,7 @@ export default function CivilianSafety() {
     setSearchState((current) => ({ ...current, items: [], error: null }));
     setRouting({ loading: false, routes: [], fastestId: null, saferId: null, fetchedAt: null, error: null });
     setSelectedRouteId(null);
+    setGuidanceRouteId(null);
     setAiState({ loading: false, explanation: null, model: null, error: null });
   };
 
@@ -274,7 +343,7 @@ export default function CivilianSafety() {
   const explainRoutes = async () => {
     setAiState({ loading: true, explanation: null, model: null, error: null });
     const payload = {
-      event: { title: selectedEvent.title, source: selectedEvent.source.name, type: selectedEvent.type, status: selectedEvent.status },
+      event: { title: activeEvent.title, source: activeEvent.source.name, type: activeEvent.type, status: activeEvent.status },
       destination: destination.label,
       routes: routing.routes.map((route) => ({
         role: route.role,
@@ -298,11 +367,11 @@ export default function CivilianSafety() {
 
   const sendHelpRequest = async (event) => {
     event.preventDefault();
-    if (!location || !selectedEvent || !assessment.routeAllowed) return;
+    if (!location || !activeEvent || !assessment.routeAllowed) return;
     setHelpState({ loading: true, error: null, success: null });
     try {
       const values = Object.fromEntries(new FormData(event.currentTarget));
-      await mutate('help', { ...values, eventId: selectedEvent.id, longitude: location.longitude, latitude: location.latitude });
+      await mutate('help', { ...values, eventId: activeEvent.id, longitude: location.longitude, latitude: location.latitude });
       event.currentTarget.reset();
       setHelpState({ loading: false, error: null, success: 'Your request was verified and added to the operator queue.' });
     } catch (reason) {
@@ -312,12 +381,12 @@ export default function CivilianSafety() {
 
   const shareRoute = async () => {
     const route = routing.routes.find((item) => item.id === selectedRouteId);
-    if (!route || !selectedEvent || !destination) return;
+    if (!route || !activeEvent || !destination) return;
     setShareState({ loading: true, error: null, success: null });
     try {
       await mutate('evacuation', {
-        eventId: selectedEvent.id,
-        eventTitle: selectedEvent.title,
+        eventId: activeEvent.id,
+        eventTitle: activeEvent.title,
         destination: destination.label,
         route: { ...route, hazardsEncountered: route.hazardsEncountered.map((item) => item.title) },
       });
@@ -328,7 +397,19 @@ export default function CivilianSafety() {
   };
 
   const mapRoutes = routing.routes;
+  const guidanceRoute = routing.routes.find((route) => route.id === (guidanceRouteId || selectedRouteId)) || null;
   const liveSourceCount = sources.filter((source) => source.status === 'available').length;
+  const safetyAlert = operations.notifications.find((item) => item.status === 'unread');
+
+  const openSafetyAlert = () => {
+    const event = operations.communityEvents.find((item) => item.id === safetyAlert?.eventId);
+    if (!event) return;
+    setCommunitySelectedId(event.id);
+    selectEvent(null);
+    setPlanOpen(true);
+    requestLocation(true);
+    mutate('notification-read', { id: safetyAlert.id }).catch(() => {});
+  };
 
   return (
     <main className="civilian-safety-shell">
@@ -337,7 +418,8 @@ export default function CivilianSafety() {
         <div className="safety-header__context"><span>Civilian safety</span><strong>Verified geography before guidance</strong></div>
         <div className="safety-mode-switch" aria-label="Map mode"><button type="button" className={mode === 'world' ? 'is-active' : ''} aria-pressed={mode === 'world'} onClick={() => setMode('world')}><MapTrifold /> World</button><button type="button" className={mode === 'near' ? 'is-active' : ''} aria-pressed={mode === 'near'} onClick={requestLocation}><NavigationArrow /> Near you</button></div>
       </header>
-      <ol className="safety-progress" aria-label="Civilian safety flow"><li className="is-complete">World</li><li className={mode === 'near' ? 'is-active' : ''}>Near you</li><li className={mode === 'near' && selectedEvent ? 'is-active' : ''}>Hazard</li><li className={planOpen ? 'is-active' : ''}>Destination</li><li className={routing.routes.length ? 'is-active' : ''}>Routes</li><li className={selectedRouteId ? 'is-active' : ''}>Escape</li></ol>
+      <ol className="safety-progress" aria-label="Civilian safety flow"><li className="is-complete">World</li><li className={mode === 'near' ? 'is-active' : ''}>Near you</li><li className={mode === 'near' && activeEvent ? 'is-active' : ''}>Hazard</li><li className={planOpen ? 'is-active' : ''}>Destination</li><li className={routing.routes.length ? 'is-active' : ''}>Routes</li><li className={selectedRouteId ? 'is-active' : ''}>Escape</li></ol>
+      {safetyAlert && <aside className="safety-notification"><BellRinging /><div><span>OPERATOR-REVIEWED REPORT NEARBY</span><strong>{safetyAlert.title}</strong><p>{safetyAlert.message}</p></div><button type="button" onClick={openSafetyAlert}>Review and route <ArrowRight /></button></aside>}
 
       <div className="safety-workspace">
         <aside className="safety-rail">
@@ -348,7 +430,7 @@ export default function CivilianSafety() {
             <div className="world-state__status"><Broadcast /><div><strong>{loading ? 'Connecting to sources' : `${events.length} current records`}</strong><span>{liveSourceCount} of {sources.length || 3} sources available · retrieved {data?.generatedAt ? new Date(data.generatedAt).toLocaleString() : 'Data unavailable'}</span></div></div>
             {error && <button type="button" className="safety-inline-retry" onClick={refresh}>Reconnect live sources <ArrowRight /></button>}
             <button type="button" className="safety-primary-action" onClick={requestLocation}><NavigationArrow /> Use my location</button>
-            <p className="privacy-note">Your coordinate stays in this browser. It is sent only to the routing request after you choose a destination.</p>
+            <p className="privacy-note">When you choose Use my location, the coordinate is shared with NAVIRA operations and used for nearby-event measurement. Road routing receives it only after you choose a destination.</p>
           </section> : <>
             <section className="location-state" aria-live="polite">
               <div><span>Near you</span><strong>{locationStatusCopy(locationState.status)}</strong></div>
@@ -357,18 +439,19 @@ export default function CivilianSafety() {
               <button type="button" onClick={requestLocation} disabled={locationState.status === 'requesting'}>{locationState.status === 'requesting' ? <SpinnerGap className="spin" /> : <Crosshair />}{location ? 'Recenter' : 'Try location again'}</button>
             </section>
 
-            {location && <section className="nearby-hazards"><div className="safety-step-heading"><span>Hazard</span><h2>Closest source records</h2><p>Distances are measured from your coordinate to each event’s published geometry. Distance alone does not define risk.</p></div><div className="nearby-hazards__list">{nearbyEvents.slice(0, 8).map((item) => <HazardRow key={item.event.id} item={item} selected={selectedEvent?.id === item.event.id} onSelect={selectEvent} />)}</div></section>}
+            {location && <section className="nearby-hazards"><div className="safety-step-heading"><span>Hazard</span><h2>Closest reviewed records</h2><p>Agency events and operator-reviewed community reports remain source-labelled. Distance alone does not define risk.</p></div><div className="nearby-hazards__list">{nearbyEvents.slice(0, 8).map((item) => <HazardRow key={item.event.id} item={item} selected={activeEvent?.id === item.event.id} onSelect={selectSafetyEvent} />)}</div></section>}
 
-            {location && <Assessment event={selectedEvent} boundary={boundary} assessment={boundary.state === 'loading' ? { ...assessment, state: 'loading' } : assessment} onPlan={() => setPlanOpen(true)} />}
-            {location && assessment.routeAllowed && <HelpRequestForm onSubmit={sendHelpRequest} state={helpState} />}
+            {location && <Assessment event={activeEvent} boundary={boundary} assessment={boundary.state === 'loading' ? { ...assessment, state: 'loading' } : assessment} onPlan={() => setPlanOpen(true)} />}
+            {location && assessment.routeAllowed && <HelpRequestForm onSubmit={sendHelpRequest} state={helpState} operatorDefined={Boolean(activeEvent?.operatorDefinedArea)} />}
             {planOpen && assessment.routeAllowed && <DestinationSearch destination={destination} query={query} onQuery={setQuery} state={searchState} onSearch={searchDestination} onSelect={chooseDestination} />}
             {planOpen && destination && assessment.routeAllowed && <button type="button" className="compare-routes-button" onClick={compareRoutes} disabled={routing.loading}><Path /> Compare real road routes <ArrowRight /></button>}
-            <RouteLedger routing={routing} selectedRouteId={selectedRouteId} onSelect={setSelectedRouteId} onExplain={explainRoutes} onShare={shareRoute} aiState={aiState} shareState={shareState} />
+            <RouteLedger routing={routing} selectedRouteId={selectedRouteId} onSelect={(id) => { setSelectedRouteId(id); setGuidanceRouteId(null); }} onExplain={explainRoutes} onShare={shareRoute} onNavigate={() => setGuidanceRouteId(selectedRouteId)} operatorDefined={Boolean(activeEvent?.operatorDefinedArea)} aiState={aiState} shareState={shareState} />
+            {guidanceRoute && <RouteGuidance route={guidanceRoute} location={location} active={guidanceRouteId === guidanceRoute.id} onStart={() => setGuidanceRouteId(guidanceRoute.id)} onStop={() => setGuidanceRouteId(null)} onLocation={setLocation} />}
           </>}
         </aside>
 
         <section className="safety-map-stage" aria-label="Civilian safety map">
-          <LiveMap events={events} selectedEvent={selectedEvent} onSelect={selectEvent} variant="civilian" userLocation={location} viewMode={mode} routes={mapRoutes} destination={destination} selectedRouteId={selectedRouteId} onBoundaryChange={setBoundary} showLayerPanel={mode === 'world'} />
+          <LiveMap events={safetyEvents} selectedEvent={activeEvent} onSelect={selectSafetyEvent} variant="civilian" userLocation={location} viewMode={mode} routes={mapRoutes} destination={destination} selectedRouteId={selectedRouteId} onBoundaryChange={setBoundary} showLayerPanel={mode === 'world'} />
           <div className="safety-map-caption"><span><i /> {mode === 'near' ? 'LOCATION MODE' : 'WORLD MODE'}</span><b>MapLibre · OpenFreeMap · live agency records</b></div>
         </section>
       </div>

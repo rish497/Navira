@@ -94,9 +94,13 @@ export function assessVerifiedArea(location, event, boundaryCollection) {
     state: inside ? 'inside' : 'outside',
     routeAllowed: inside,
     distanceKm,
-    message: inside
-      ? 'Your location intersects this source-supplied warning area. Escape-route comparison is available.'
-      : `Your location is outside the source-supplied warning area${Number.isFinite(distanceKm) ? ` by ${formatDistance(distanceKm)}` : ''}.`,
+    message: event.operatorDefinedArea
+      ? inside
+        ? 'Your last shared location is inside the operator-defined notification area for this reviewed community report. Choose your own destination to calculate road routes.'
+        : `Your location is outside the operator-defined notification area${Number.isFinite(distanceKm) ? ` by ${formatDistance(distanceKm)}` : ''}. This area is not an official hazard boundary.`
+      : inside
+        ? 'Your location intersects this source-supplied warning area. Escape-route comparison is available.'
+        : `Your location is outside the source-supplied warning area${Number.isFinite(distanceKm) ? ` by ${formatDistance(distanceKm)}` : ''}.`,
     boundaries: { type: 'FeatureCollection', features: boundaries },
   };
 }

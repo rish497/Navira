@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import '@fontsource-variable/urbanist';
 import App from './App';
 import './styles.css';
+import './signal-foundry.css';
 import { LiveDataProvider } from './liveData';
 import { AuthProvider } from './auth';
 import { OperationsProvider } from './operationsData';

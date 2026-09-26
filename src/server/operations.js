@@ -1,13 +1,14 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
-import { booleanPointInPolygon, point } from '@turf/turf';
+import { booleanPointInPolygon, circle, distance, point } from '@turf/turf';
 
 const STORE_DIR = path.resolve('.navira-data');
 const STORE_PATH = path.join(STORE_DIR, 'operations.json');
 const EMPTY_STORE = {
   helpRequests: [], locations: [], dispatches: [], resources: [], allocations: [],
-  infrastructure: [], simulations: [], evacuations: [], updatedAt: null,
+  infrastructure: [], simulations: [], evacuations: [], incidentReports: [],
+  communityEvents: [], notifications: [], updatedAt: null,
 };
 let storePromise;
 let writeQueue = Promise.resolve();
@@ -59,8 +60,16 @@ export async function getOperations(actor) {
     infrastructure: actor.role === 'operator' ? store.infrastructure : [],
     simulations: actor.role === 'operator' ? store.simulations : [],
     evacuations: ownRecords(store.evacuations, actor),
+    incidentReports: actor.role === 'operator' ? store.incidentReports : store.incidentReports.filter((item) => item.userId === actor.id),
+    communityEvents: actor.role === 'operator' ? store.communityEvents : store.communityEvents.filter((item) => item.status === 'operator-verified'),
+    notifications: actor.role === 'operator' ? [] : store.notifications.filter((item) => item.userId === actor.id),
     updatedAt: store.updatedAt,
   };
+}
+
+export async function getCommunityEvent(id) {
+  const store = await loadStore();
+  return store.communityEvents.find((item) => item.id === id && item.status === 'operator-verified') || null;
 }
 
 export async function updateLocation(actor, payload) {
@@ -100,7 +109,9 @@ export async function createHelpRequest(actor, payload, event) {
     longitude: location.longitude, latitude: location.latitude, accuracy: location.accuracy,
     need: requireValue(payload.need, 'Type of help'), details: cleanText(payload.details, 800),
     people: finite(payload.people, 1, 500) || 1, status: 'new', createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(), verification: 'Location intersects source-supplied hazard geometry',
+    updatedAt: new Date().toISOString(), verification: event.operatorDefinedArea
+      ? 'Location intersects an operator-defined notification area for a reviewed community report'
+      : 'Location intersects source-supplied hazard geometry',
   };
   store.helpRequests.unshift(record);
   await persist(store);
@@ -115,6 +126,116 @@ export async function updateHelpRequest(actor, payload) {
   const status = cleanText(payload.status, 30);
   if (!['new', 'acknowledged', 'assigned', 'resolved'].includes(status)) throw new Error('Invalid request status');
   record.status = status; record.updatedAt = new Date().toISOString();
+  await persist(store);
+  return record;
+}
+
+function validImageData(value) {
+  if (typeof value !== 'string' || value.length > 4_500_000) return false;
+  return /^data:image\/(jpeg|png|webp);base64,[a-z0-9+/=]+$/i.test(value);
+}
+
+const REPORT_TYPES = new Set(['Earthquake', 'Flood', 'Wildfire', 'Landslide', 'Severe storm', 'Extreme wind', 'Tsunami', 'Volcanic activity', 'Other natural hazard']);
+
+export async function createIncidentReport(actor, payload) {
+  if (actor.role !== 'civilian') throw new Error('Only civilian accounts can submit image reports');
+  const longitude = finite(payload.longitude, -180, 180);
+  const latitude = finite(payload.latitude, -90, 90);
+  if (longitude === null || latitude === null) throw new Error('Location permission is required with an image report');
+  if (!validImageData(payload.imageData)) throw new Error('Upload a JPEG, PNG, or WebP image under 3 MB');
+  const disasterType = requireValue(payload.disasterType, 'Disaster type');
+  if (!REPORT_TYPES.has(disasterType)) throw new Error('Select a supported disaster type');
+  const store = await loadStore();
+  const record = {
+    id: randomUUID(), userId: actor.id, userName: actor.name,
+    disasterType, details: cleanText(payload.details, 800), imageData: payload.imageData,
+    fileName: cleanText(payload.fileName, 180), longitude, latitude,
+    accuracy: finite(payload.accuracy, 0, 100000), status: 'pending-review',
+    source: 'Civilian-submitted image and device location', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+  };
+  store.incidentReports.unshift(record);
+  await persist(store);
+  return { ...record, imageData: undefined };
+}
+
+export async function reviewIncidentReport(actor, payload) {
+  if (actor.role !== 'operator') throw new Error('Operator access is required');
+  const store = await loadStore();
+  const report = store.incidentReports.find((item) => item.id === payload.id);
+  if (!report) throw new Error('Image report was not found');
+  if (report.status !== 'pending-review') throw new Error('This report has already been reviewed');
+  const decision = cleanText(payload.decision, 30);
+  if (!['natural-disaster', 'dismissed'].includes(decision)) throw new Error('Choose a review decision');
+  report.status = decision === 'natural-disaster' ? 'operator-verified' : 'dismissed';
+  report.reviewedBy = actor.name;
+  report.reviewedAt = new Date().toISOString();
+  report.reviewNotes = cleanText(payload.reviewNotes, 800);
+
+  if (decision === 'dismissed') {
+    await persist(store);
+    return { report, event: null, notified: 0 };
+  }
+
+  const notificationRadiusKm = finite(payload.notificationRadiusKm, 0.1, 100);
+  if (notificationRadiusKm === null) throw new Error('Enter an operator-defined notification radius between 0.1 and 100 km');
+  const confirmedType = REPORT_TYPES.has(cleanText(payload.confirmedType, 80)) ? cleanText(payload.confirmedType, 80) : report.disasterType;
+  const alertArea = circle([report.longitude, report.latitude], notificationRadiusKm, { steps: 64, units: 'kilometers' });
+  const createdAt = new Date().toISOString();
+  const event = {
+    id: `community:${report.id}`,
+    reportId: report.id,
+    title: `${confirmedType} — operator-reviewed community report`,
+    description: report.details || 'No description was supplied with the image.',
+    type: confirmedType,
+    severity: 'Not assessed from the image',
+    severityLevel: null,
+    status: 'operator-verified',
+    timestamp: report.createdAt,
+    updatedAt: createdAt,
+    coordinates: [report.longitude, report.latitude],
+    geometry: alertArea.geometry,
+    geometryKind: 'Operator-defined notification area',
+    country: null,
+    sourceEventId: report.id,
+    sourceUrl: null,
+    sourceLinks: [],
+    source: { id: 'community', name: 'Operator-reviewed community report' },
+    operatorDefinedArea: true,
+    notificationRadiusKm,
+    reviewedBy: actor.name,
+  };
+  store.communityEvents.unshift(event);
+  report.confirmedType = confirmedType;
+  report.notificationRadiusKm = notificationRadiusKm;
+  report.eventId = event.id;
+
+  const origin = point([report.longitude, report.latitude]);
+  const nearby = store.locations.map((location) => ({
+    location,
+    distanceKm: distance(origin, point([location.longitude, location.latitude]), { units: 'kilometers' }),
+  })).filter((item) => item.distanceKm <= notificationRadiusKm);
+  const existing = new Set(store.notifications.filter((item) => item.eventId === event.id).map((item) => item.userId));
+  nearby.forEach(({ location, distanceKm }) => {
+    if (existing.has(location.userId)) return;
+    store.notifications.unshift({
+      id: randomUUID(), userId: location.userId, eventId: event.id, reportId: report.id,
+      title: `${confirmedType} report verified near your shared location`,
+      message: `An operator reviewed a community image report ${distanceKm < 1 ? `${Math.max(1, Math.round(distanceKm * 1000))} m` : `${distanceKm.toFixed(1)} km`} from your last shared location. Open civilian safety, review the evidence, and choose a destination before road routing begins.`,
+      distanceKm, notificationRadiusKm, status: 'unread', createdAt,
+      provenance: 'Operator-reviewed community report; notification area defined by operator',
+    });
+  });
+  await persist(store);
+  return { report, event, notified: nearby.length };
+}
+
+export async function markNotificationRead(actor, payload) {
+  if (actor.role !== 'civilian') throw new Error('Only civilian accounts have personal notifications');
+  const store = await loadStore();
+  const record = store.notifications.find((item) => item.id === payload.id && item.userId === actor.id);
+  if (!record) throw new Error('Notification was not found');
+  record.status = 'read';
+  record.readAt = new Date().toISOString();
   await persist(store);
   return record;
 }

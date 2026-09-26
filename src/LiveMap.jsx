@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { AttributionControl, LngLatBounds, Map, NavigationControl, ScaleControl, setWorkerUrl } from 'maplibre-gl';
+import { AttributionControl, LngLatBounds, Map, Marker, NavigationControl, ScaleControl, setWorkerUrl } from 'maplibre-gl';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { Crosshair, Eye, EyeSlash, SpinnerGap } from '@phosphor-icons/react';
@@ -7,7 +7,7 @@ import { Crosshair, Eye, EyeSlash, SpinnerGap } from '@phosphor-icons/react';
 setWorkerUrl(workerUrl);
 
 const MAP_STYLE = 'https://tiles.openfreemap.org/styles/liberty';
-const SOURCE_COLORS = { eonet: '#74a7b9', gdacs: '#ff5537', usgs: '#f0c457' };
+const SOURCE_COLORS = { eonet: '#74a7b9', gdacs: '#ff5537', usgs: '#f0c457', community: '#ff3b1f' };
 const BASE_FILTERS = {
   'event-polygons': ['in', ['geometry-type'], ['literal', ['Polygon', 'MultiPolygon']]],
   'event-polygon-outline': ['in', ['geometry-type'], ['literal', ['Polygon', 'MultiPolygon']]],
@@ -95,12 +95,15 @@ export default function LiveMap({
   showLayerPanel = true,
   people = [],
   onPersonSelect,
+  reports = [],
+  onReportSelect,
 }) {
   const containerRef = useRef(null);
   const mapRef = useRef(null);
+  const destinationMarkerRef = useRef(null);
   const [ready, setReady] = useState(false);
   const [showHeroLoader, setShowHeroLoader] = useState(true);
-  const [visibility, setVisibility] = useState({ eonet: true, gdacs: true, usgs: true });
+  const [visibility, setVisibility] = useState({ eonet: true, gdacs: true, usgs: true, community: true });
   const [boundaryState, setBoundaryState] = useState('idle');
   const [boundaryFetchedAt, setBoundaryFetchedAt] = useState(null);
   const collection = useMemo(() => eventCollection(events), [events]);
@@ -126,16 +129,27 @@ export default function LiveMap({
       properties: { personId: item.id || item.userId, status: item.status || 'location', name: item.userName || item.name || 'Shared location' },
     })),
   }), [people]);
+  const reportCollection = useMemo(() => ({
+    type: 'FeatureCollection',
+    features: reports.filter((item) => Number.isFinite(item.longitude) && Number.isFinite(item.latitude)).map((item) => ({
+      type: 'Feature',
+      id: item.id,
+      geometry: { type: 'Point', coordinates: [item.longitude, item.latitude] },
+      properties: { reportId: item.id, status: item.status, disasterType: item.disasterType },
+    })),
+  }), [reports]);
   const collectionRef = useRef(collection);
   const onSelectRef = useRef(onSelect);
   const onBoundaryChangeRef = useRef(null);
   const onPersonSelectRef = useRef(onPersonSelect);
+  const onReportSelectRef = useRef(onReportSelect);
   const hasFocusedRef = useRef(false);
 
   useEffect(() => { collectionRef.current = collection; }, [collection]);
   useEffect(() => { onSelectRef.current = onSelect; }, [onSelect]);
   useEffect(() => { onBoundaryChangeRef.current = onBoundaryChange; }, [onBoundaryChange]);
   useEffect(() => { onPersonSelectRef.current = onPersonSelect; }, [onPersonSelect]);
+  useEffect(() => { onReportSelectRef.current = onReportSelect; }, [onReportSelect]);
 
   useEffect(() => {
     if (variant !== 'hero') return undefined;
@@ -171,6 +185,7 @@ export default function LiveMap({
       map.addSource('navira-user', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
       map.addSource('navira-destination', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
       map.addSource('navira-people', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+      map.addSource('navira-reports', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
 
       map.addLayer({
         id: 'event-polygons', type: 'fill', source: 'navira-events',
@@ -241,6 +256,16 @@ export default function LiveMap({
         id: 'navira-people-point', type: 'circle', source: 'navira-people',
         paint: { 'circle-radius': 7, 'circle-color': ['case', ['==', ['get', 'status'], 'location'], '#f1eee9', '#ff5537'], 'circle-stroke-color': '#0f1113', 'circle-stroke-width': 2 },
       });
+      map.addLayer({
+        id: 'navira-report-pulse', type: 'circle', source: 'navira-reports',
+        paint: { 'circle-radius': 18, 'circle-color': '#41d98d', 'circle-opacity': .22, 'circle-stroke-width': 0 },
+      });
+      map.setPaintProperty('navira-report-pulse', 'circle-radius-transition', { duration: 650, delay: 0 });
+      map.setPaintProperty('navira-report-pulse', 'circle-opacity-transition', { duration: 650, delay: 0 });
+      map.addLayer({
+        id: 'navira-report-point', type: 'circle', source: 'navira-reports',
+        paint: { 'circle-radius': 7, 'circle-color': '#41d98d', 'circle-stroke-color': '#0f1113', 'circle-stroke-width': 3 },
+      });
 
       ['event-points', 'event-lines', 'event-polygons'].forEach((layer) => {
         map.on('click', layer, (event) => {
@@ -254,6 +279,9 @@ export default function LiveMap({
       map.on('click', 'navira-people-point', (event) => onPersonSelectRef.current?.(event.features?.[0]?.properties?.personId));
       map.on('mouseenter', 'navira-people-point', () => { map.getCanvas().style.cursor = 'pointer'; });
       map.on('mouseleave', 'navira-people-point', () => { map.getCanvas().style.cursor = ''; });
+      map.on('click', 'navira-report-point', (event) => onReportSelectRef.current?.(event.features?.[0]?.properties?.reportId));
+      map.on('mouseenter', 'navira-report-point', () => { map.getCanvas().style.cursor = 'pointer'; });
+      map.on('mouseleave', 'navira-report-point', () => { map.getCanvas().style.cursor = ''; });
       setReady(true);
     });
 
@@ -301,6 +329,19 @@ export default function LiveMap({
       type: 'FeatureCollection',
       features: [{ type: 'Feature', properties: {}, geometry: { type: 'Point', coordinates: [destination.longitude, destination.latitude] } }],
     } : { type: 'FeatureCollection', features: [] });
+    destinationMarkerRef.current?.remove();
+    destinationMarkerRef.current = null;
+    if (destination) {
+      const element = document.createElement('div');
+      element.className = 'navira-destination-marker';
+      element.setAttribute('aria-label', `Destination: ${destination.label || 'selected destination'}`);
+      element.innerHTML = '<svg viewBox="0 0 120 110" aria-hidden="true"><path fill="#f1eee9" d="M0 0 30 28v54L0 110V0Z"/><path fill="#f1eee9" d="M120 0v110L90 82V28L120 0Z"/><path fill="#ff3b1f" d="M0 0h36l39 35v27L44 35 0 0Z"/><path fill="#ff3b1f" d="m44 35 76 75H82L44 75V35Z"/></svg>';
+      destinationMarkerRef.current = new Marker({ element, anchor: 'bottom' }).setLngLat([destination.longitude, destination.latitude]).addTo(map);
+    }
+    return () => {
+      destinationMarkerRef.current?.remove();
+      destinationMarkerRef.current = null;
+    };
   }, [destination, ready]);
 
   useEffect(() => {
@@ -308,6 +349,24 @@ export default function LiveMap({
     if (!ready || !map) return;
     map.getSource('navira-people')?.setData(peopleCollection);
   }, [peopleCollection, ready]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!ready || !map) return;
+    map.getSource('navira-reports')?.setData(reportCollection);
+  }, [reportCollection, ready]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!ready || !map?.getLayer('navira-report-pulse') || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined;
+    let expanded = false;
+    const timer = window.setInterval(() => {
+      expanded = !expanded;
+      map.setPaintProperty('navira-report-pulse', 'circle-radius', expanded ? 23 : 14);
+      map.setPaintProperty('navira-report-pulse', 'circle-opacity', expanded ? .06 : .28);
+    }, 720);
+    return () => window.clearInterval(timer);
+  }, [ready]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -327,7 +386,8 @@ export default function LiveMap({
       onBoundaryChangeRef.current?.({ state: 'idle', eventId: null, collection: null, fetchedAt: null });
       return;
     }
-    if (variant === 'civilian' && viewMode === 'world') hasFocusedRef.current = true;
+    if (viewMode === 'near') hasFocusedRef.current = true;
+    else if (variant === 'civilian' && viewMode === 'world') hasFocusedRef.current = true;
     else if (hasFocusedRef.current) fitGeometry(map, selectedEvent.geometry);
     else hasFocusedRef.current = true;
     if (!selectedEvent.gdacsKey) {
@@ -382,11 +442,11 @@ export default function LiveMap({
         ))}
         <div className="map-layer-panel__status">
           <span>GDACS boundary</span>
-          <b>{boundaryState === 'loading' ? 'Loading' : boundaryState === 'available' ? `Source geometry · ${freshnessLabel(boundaryFetchedAt)}` : 'Data unavailable'}</b>
+          <b>{boundaryState === 'loading' ? 'Loading source geometry' : boundaryState === 'available' ? `Source geometry · ${freshnessLabel(boundaryFetchedAt)}` : selectedEvent ? 'No boundary supplied for this record' : 'Select an event to inspect geometry'}</b>
         </div>
         <div className="map-layer-panel__status">
-          <span>Official evacuation routes</span>
-          <b>Data unavailable</b>
+          <span>Road route analysis</span>
+          <b>{routes.length ? `${routes.length} verified road alternative${routes.length === 1 ? '' : 's'}` : variant === 'civilian' ? 'Available after destination selection' : 'Built in civilian safety after risk assessment'}</b>
         </div>
       </div>}
       <div className="map-source-note">OpenFreeMap · OpenMapTiles · © OpenStreetMap contributors</div>
