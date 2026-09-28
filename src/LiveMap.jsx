@@ -3,11 +3,14 @@ import { AttributionControl, LngLatBounds, Map, Marker, NavigationControl, Scale
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { Crosshair, Eye, EyeSlash, SpinnerGap } from '@phosphor-icons/react';
+import { useRoadData } from './roadData';
+import { useAlertData } from './alertData';
 
 setWorkerUrl(workerUrl);
 
 const MAP_STYLE = 'https://tiles.openfreemap.org/styles/liberty';
-const SOURCE_COLORS = { eonet: '#74a7b9', gdacs: '#ff5537', usgs: '#f0c457', community: '#ff3b1f' };
+const SOURCE_COLORS = { eonet: '#74a7b9', gdacs: '#ff5537', usgs: '#f0c457', cap: '#f4b800', community: '#ff3b1f' };
+const motionDuration = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 0 : 850;
 const BASE_FILTERS = {
   'event-polygons': ['in', ['geometry-type'], ['literal', ['Polygon', 'MultiPolygon']]],
   'event-polygon-outline': ['in', ['geometry-type'], ['literal', ['Polygon', 'MultiPolygon']]],
@@ -56,11 +59,11 @@ function fitGeometry(map, geometry, options = {}) {
   const coordinates = coordinatesOf(geometry);
   if (!coordinates.length) return;
   if (coordinates.length === 1) {
-    map.easeTo({ center: coordinates[0], zoom: options.zoom || 6, duration: 850 });
+    map.easeTo({ center: coordinates[0], zoom: options.zoom || 6, duration: motionDuration() });
     return;
   }
   const bounds = coordinates.reduce((box, coordinate) => box.extend(coordinate), new LngLatBounds(coordinates[0], coordinates[0]));
-  map.fitBounds(bounds, { padding: options.padding || 90, maxZoom: options.maxZoom || 8, duration: 850 });
+  map.fitBounds(bounds, { padding: options.padding || 90, maxZoom: options.maxZoom || 8, duration: motionDuration() });
 }
 
 async function fetchBoundary(event) {
@@ -98,12 +101,14 @@ export default function LiveMap({
   reports = [],
   onReportSelect,
 }) {
+  const roadData = useRoadData();
+  const alertData = useAlertData();
   const containerRef = useRef(null);
   const mapRef = useRef(null);
   const destinationMarkerRef = useRef(null);
   const [ready, setReady] = useState(false);
   const [showHeroLoader, setShowHeroLoader] = useState(true);
-  const [visibility, setVisibility] = useState({ eonet: true, gdacs: true, usgs: true, community: true });
+  const [visibility, setVisibility] = useState({ eonet: true, gdacs: true, usgs: true, cap: true, community: true, roads: true });
   const [boundaryState, setBoundaryState] = useState('idle');
   const [boundaryFetchedAt, setBoundaryFetchedAt] = useState(null);
   const collection = useMemo(() => eventCollection(events), [events]);
@@ -138,6 +143,20 @@ export default function LiveMap({
       properties: { reportId: item.id, status: item.status, disasterType: item.disasterType },
     })),
   }), [reports]);
+  const restrictionCollection = useMemo(() => ({
+    type: 'FeatureCollection',
+    features: roadData.restrictions.map((item) => ({
+      type: 'Feature', id: item.id, geometry: item.geometry,
+      properties: { restrictionId: item.id, status: item.status, title: item.title, source: item.source?.name || 'Road source', updatedAt: item.updatedAt || item.retrievedAt },
+    })),
+  }), [roadData.restrictions]);
+  const capCollection = useMemo(() => ({
+    type: 'FeatureCollection',
+    features: alertData.alerts.filter((item) => item.geometry && !events.some((event) => event.id === item.id)).map((item) => ({
+      type: 'Feature', id: item.id, geometry: item.geometry,
+      properties: { alertId: item.id, title: item.headline, severity: item.severity, source: item.source?.name || 'OASIS CAP authority', sentAt: item.sentAt || item.effectiveAt },
+    })),
+  }), [alertData.alerts, events]);
   const collectionRef = useRef(collection);
   const onSelectRef = useRef(onSelect);
   const onBoundaryChangeRef = useRef(null);
@@ -186,6 +205,8 @@ export default function LiveMap({
       map.addSource('navira-destination', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
       map.addSource('navira-people', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
       map.addSource('navira-reports', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+      map.addSource('navira-road-restrictions', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+      map.addSource('navira-cap-alerts', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
 
       map.addLayer({
         id: 'event-polygons', type: 'fill', source: 'navira-events',
@@ -223,6 +244,28 @@ export default function LiveMap({
       map.addLayer({
         id: 'gdacs-boundary-line', type: 'line', source: 'gdacs-boundary',
         paint: { 'line-color': '#ff5537', 'line-width': 2.5, 'line-dasharray': [2, 1] },
+      });
+      map.addLayer({
+        id: 'cap-alert-fill', type: 'fill', source: 'navira-cap-alerts',
+        filter: ['in', ['geometry-type'], ['literal', ['Polygon', 'MultiPolygon']]],
+        paint: { 'fill-color': '#f4b800', 'fill-opacity': .14 },
+      });
+      map.addLayer({
+        id: 'cap-alert-line', type: 'line', source: 'navira-cap-alerts',
+        paint: { 'line-color': '#f4b800', 'line-width': 2.5, 'line-dasharray': [2, 1] },
+      });
+      map.addLayer({
+        id: 'road-restriction-halo', type: 'line', source: 'navira-road-restrictions',
+        paint: { 'line-color': '#0f1113', 'line-width': 8, 'line-opacity': .72 },
+      });
+      map.addLayer({
+        id: 'road-restriction-line', type: 'line', source: 'navira-road-restrictions',
+        paint: { 'line-color': ['match', ['get', 'status'], 'CONFIRMED_CLOSED', '#ff3b1f', 'REPORTED_OBSTRUCTION', '#f4b800', '#68737a'], 'line-width': 4, 'line-dasharray': [1.4, .8] },
+      });
+      map.addLayer({
+        id: 'road-restriction-points', type: 'circle', source: 'navira-road-restrictions',
+        filter: ['in', ['geometry-type'], ['literal', ['Point', 'MultiPoint']]],
+        paint: { 'circle-radius': 7, 'circle-color': ['match', ['get', 'status'], 'CONFIRMED_CLOSED', '#ff3b1f', 'REPORTED_OBSTRUCTION', '#f4b800', '#68737a'], 'circle-stroke-color': '#0f1113', 'circle-stroke-width': 2 },
       });
       map.addLayer({
         id: 'verified-routes-casing', type: 'line', source: 'verified-routes',
@@ -318,8 +361,8 @@ export default function LiveMap({
       type: 'FeatureCollection',
       features: [{ type: 'Feature', properties: {}, geometry: { type: 'Point', coordinates: [userLocation.longitude, userLocation.latitude] } }],
     } : { type: 'FeatureCollection', features: [] });
-    if (viewMode === 'near' && userLocation) map.easeTo({ center: [userLocation.longitude, userLocation.latitude], zoom: 7.5, duration: 850 });
-    if (viewMode === 'world') map.easeTo({ center: [12, 18], zoom: 1.55, duration: 850 });
+    if (viewMode === 'near' && userLocation) map.easeTo({ center: [userLocation.longitude, userLocation.latitude], zoom: 7.5, duration: motionDuration() });
+    if (viewMode === 'world') map.easeTo({ center: [12, 18], zoom: 1.55, duration: motionDuration() });
   }, [userLocation, viewMode, ready]);
 
   useEffect(() => {
@@ -355,6 +398,22 @@ export default function LiveMap({
     if (!ready || !map) return;
     map.getSource('navira-reports')?.setData(reportCollection);
   }, [reportCollection, ready]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!ready || !map) return;
+    map.getSource('navira-road-restrictions')?.setData(restrictionCollection);
+    ['road-restriction-halo', 'road-restriction-line', 'road-restriction-points'].forEach((id) => {
+      if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', visibility.roads ? 'visible' : 'none');
+    });
+  }, [restrictionCollection, visibility.roads, ready]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!ready || !map) return;
+    map.getSource('navira-cap-alerts')?.setData(capCollection);
+    ['cap-alert-fill', 'cap-alert-line'].forEach((id) => { if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', visibility.cap ? 'visible' : 'none'); });
+  }, [capCollection, visibility.cap, ready]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -433,13 +492,14 @@ export default function LiveMap({
       {(!ready || (variant === 'hero' && showHeroLoader)) && <div className={`map-loading ${ready ? 'map-loading--leaving' : ''}`}><SpinnerGap size={20} className="spin" /> Loading geographic data</div>}
       {showLayerPanel && <div className="map-layer-panel" aria-label="Map layers">
         <div className="map-layer-panel__head"><Crosshair size={16} /> Live layers</div>
-        {Object.entries(SOURCE_COLORS).map(([id, color]) => (
+        {Object.entries(SOURCE_COLORS).filter(([id]) => id !== 'cap' || alertData.generatedAt).map(([id, color]) => (
           <button key={id} type="button" onClick={() => toggle(id)} className={visibility[id] ? 'is-on' : ''}>
             <i style={{ background: color }} />
-            <span>{id === 'eonet' ? 'NASA EONET' : id.toUpperCase()}</span>
+            <span>{id === 'eonet' ? 'NASA EONET' : id === 'cap' ? 'OFFICIAL CAP ALERTS' : id.toUpperCase()}</span>
             {visibility[id] ? <Eye size={15} /> : <EyeSlash size={15} />}
           </button>
         ))}
+        {roadData.generatedAt && <button type="button" onClick={() => toggle('roads')} className={visibility.roads ? 'is-on' : ''}><i style={{ background: '#f4b800' }} /><span>ROAD RESTRICTIONS</span>{visibility.roads ? <Eye size={15} /> : <EyeSlash size={15} />}</button>}
         <div className="map-layer-panel__status">
           <span>GDACS boundary</span>
           <b>{boundaryState === 'loading' ? 'Loading source geometry' : boundaryState === 'available' ? `Source geometry · ${freshnessLabel(boundaryFetchedAt)}` : selectedEvent ? 'No boundary supplied for this record' : 'Select an event to inspect geometry'}</b>
@@ -448,6 +508,12 @@ export default function LiveMap({
           <span>Road route analysis</span>
           <b>{routes.length ? `${routes.length} verified road alternative${routes.length === 1 ? '' : 's'}` : variant === 'civilian' ? 'Available after destination selection' : 'Built in civilian safety after risk assessment'}</b>
         </div>
+        {roadData.generatedAt && <div className={`map-layer-panel__status ${roadData.coverage.status === 'degraded' ? 'is-degraded' : ''}`}>
+          <span>Road restriction coverage</span>
+          <b>{roadData.loading ? 'Checking connected Open511 sources' : roadData.coverage.message}</b>
+          {roadData.generatedAt && <small>Retrieved {freshnessLabel(roadData.generatedAt)} · {roadData.restrictions.length} relevant records</small>}
+        </div>}
+        {alertData.generatedAt && <div className={`map-layer-panel__status ${alertData.coverage.status === 'degraded' ? 'is-degraded' : ''}`}><span>Official alert coverage</span><b>{alertData.coverage.message}</b><small>{alertData.alerts.length} current CAP record{alertData.alerts.length === 1 ? '' : 's'} · retrieved {freshnessLabel(alertData.generatedAt)}</small></div>}
       </div>}
       <div className="map-source-note">OpenFreeMap · OpenMapTiles · © OpenStreetMap contributors</div>
     </section>

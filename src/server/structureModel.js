@@ -12,6 +12,7 @@ const allowedMaterials = new Set(['concrete', 'glass', 'brick', 'stone', 'metal'
 const hex = /^#[0-9a-f]{6}$/i;
 
 function finite(value, min, max, fallback = null) {
+  if (value === null || value === undefined || value === '') return fallback;
   const number = Number(value);
   return Number.isFinite(number) ? Math.min(max, Math.max(min, number)) : fallback;
 }
@@ -37,7 +38,7 @@ function safeAsset(input) {
       id: text(feature.id, 100), type: text(feature.type, 40), name: text(feature.name, 160),
       geometry: Array.isArray(feature.geometry) ? feature.geometry.slice(0, 3000).map((point) => Array.isArray(point) ? point.slice(0, 2).map(Number) : []).filter((point) => point.length === 2 && point.every(Number.isFinite)) : [],
       tags: Object.fromEntries(Object.entries(feature.tags || {}).slice(0, 40).map(([key, value]) => [text(key, 80), text(value, 160)])),
-    })).filter((feature) => feature.geometry.length >= 2) : [],
+    })).filter((feature) => feature.geometry.length >= 1) : [],
     imported: {
       heightMeters: finite(input.imported?.heightMeters, 1, 1000),
       levels: finite(input.imported?.levels, 1, 200),
@@ -51,37 +52,96 @@ function safeAsset(input) {
 }
 
 async function overpass(query, timeout = 32000) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeout);
-  try {
-    const response = await fetch('https://overpass-api.de/api/interpreter', {
-      method: 'POST', signal: controller.signal,
-      headers: { 'User-Agent': 'NAVIRA-Infrastructure-Lab/1.0', 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json' },
-      body: new URLSearchParams({ data: query }),
-    });
-    if (!response.ok) return [];
-    return (await response.json()).elements || [];
-  } catch {
-    return [];
-  } finally {
-    clearTimeout(timer);
+  const endpoints = ['https://overpass.kumi.systems/api/interpreter', 'https://overpass-api.de/api/interpreter'];
+  for (const endpoint of endpoints) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), Math.min(timeout, 70000));
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST', signal: controller.signal,
+        headers: { 'User-Agent': 'Mozilla/5.0 NAVIRA-Infrastructure-Lab/1.0 (+http://localhost:5180/)', From: 'navira-infrastructure-lab@localhost.invalid', 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json' },
+        body: new URLSearchParams({ data: query }),
+      });
+      if (!response.ok) continue;
+      const payload = await response.json();
+      if (Array.isArray(payload.elements)) return payload.elements;
+    } catch {
+      // Try the next public Overpass endpoint. An empty result remains honest.
+    } finally {
+      clearTimeout(timer);
+    }
   }
+  return [];
 }
 
 function overpassGeometry(element) {
+  if (Number.isFinite(Number(element.lon)) && Number.isFinite(Number(element.lat))) return [[Number(element.lon), Number(element.lat)]];
   return (element.geometry || []).map((point) => [Number(point.lon), Number(point.lat)]).filter((point) => point.every(Number.isFinite));
+}
+
+async function osmJson(url, timeout = 60000) {
+  const response = await fetch(url, {
+    signal: AbortSignal.timeout(timeout),
+    headers: { 'User-Agent': 'NAVIRA-Infrastructure-Lab/1.0', Accept: 'application/json' },
+  });
+  if (!response.ok) throw new Error(`OpenStreetMap returned ${response.status}`);
+  return response.json();
+}
+
+async function airportSiteFeaturesFromOsmMap(asset) {
+  if (asset.osmType !== 'relation' || !asset.osmId) return [];
+  try {
+    const relation = await osmJson(`https://api.openstreetmap.org/api/0.6/relation/${asset.osmId}/full.json`, 30000);
+    const boundaryNodes = (relation.elements || []).filter((element) => element.type === 'node' && Number.isFinite(element.lon) && Number.isFinite(element.lat));
+    if (boundaryNodes.length < 3) return [];
+    const bounds = {
+      minLon: Math.min(...boundaryNodes.map((node) => node.lon)), minLat: Math.min(...boundaryNodes.map((node) => node.lat)),
+      maxLon: Math.max(...boundaryNodes.map((node) => node.lon)), maxLat: Math.max(...boundaryNodes.map((node) => node.lat)),
+    };
+    const width = bounds.maxLon - bounds.minLon;
+    const height = bounds.maxLat - bounds.minLat;
+    if (width <= 0 || height <= 0 || width > .25 || height > .25 || width * height > .03) return [];
+    const bbox = [bounds.minLon, bounds.minLat, bounds.maxLon, bounds.maxLat].join(',');
+    const extract = await osmJson(`https://api.openstreetmap.org/api/0.6/map.json?bbox=${bbox}`, 90000);
+    const elements = extract.elements || [];
+    const nodes = new Map(elements.filter((element) => element.type === 'node').map((node) => [node.id, [node.lon, node.lat]]));
+    const wanted = new Set(['runway', 'taxiway', 'apron', 'terminal', 'jet_bridge']);
+    const features = elements.filter((element) => element.type === 'way' && (wanted.has(element.tags?.aeroway) || element.tags?.building === 'terminal')).map((element) => ({
+      id: `osm-way-${element.id}`,
+      type: element.tags?.aeroway === 'terminal' || element.tags?.building === 'terminal' ? 'terminal' : element.tags.aeroway,
+      name: text(element.tags?.name, 160),
+      geometry: (element.nodes || []).map((id) => nodes.get(id)).filter(Boolean),
+      tags: element.tags || {},
+    })).filter((feature) => feature.geometry.length >= 2);
+    const terminalPoints = features.filter((feature) => feature.type === 'terminal').flatMap((feature) => feature.geometry);
+    const pointFeatures = elements.filter((element) => element.type === 'node' && (element.tags?.aeroway === 'gate' || element.tags?.entrance)).flatMap((element) => {
+      const geometry = [[element.lon, element.lat]];
+      const type = element.tags?.aeroway === 'gate' ? 'gate' : 'entrance';
+      if (type === 'entrance' && terminalPoints.length && Math.min(...terminalPoints.map((point) => haversineMeters(geometry[0], point))) > 100) return [];
+      return [{ id: `osm-node-${element.id}`, type, name: text(element.tags?.name || element.tags?.ref, 160), geometry, tags: element.tags || {} }];
+    });
+    const quotas = { runway: 12, terminal: 24, apron: 36, jet_bridge: 60, taxiway: 110, gate: 60, entrance: 60 };
+    return Object.entries(quotas).flatMap(([type, limit]) => [...features, ...pointFeatures].filter((feature) => feature.type === type).slice(0, limit));
+  } catch {
+    return [];
+  }
 }
 
 async function airportSiteFeatures(asset) {
   if (asset.category !== 'airports') return [];
+  const mapped = await airportSiteFeaturesFromOsmMap(asset);
+  if (mapped.length) return mapped;
   const [longitude, latitude] = asset.center;
-  const query = `[out:json][timeout:28];(way(around:6500,${latitude},${longitude})["aeroway"="runway"];way(around:6500,${latitude},${longitude})["aeroway"="taxiway"];way(around:6500,${latitude},${longitude})["aeroway"="apron"];way(around:6500,${latitude},${longitude})["aeroway"="terminal"];way(around:6500,${latitude},${longitude})["aeroway"="jet_bridge"];way(around:6500,${latitude},${longitude})["building"]["aeroway"="terminal"];);out tags geom 250;`;
-  const elements = await overpass(query, 36000);
+  const coreQuery = `[out:json][timeout:28];(way(around:6500,${latitude},${longitude})["aeroway"="runway"];way(around:6500,${latitude},${longitude})["aeroway"="taxiway"];way(around:6500,${latitude},${longitude})["aeroway"="apron"];way(around:6500,${latitude},${longitude})["aeroway"="terminal"];way(around:6500,${latitude},${longitude})["aeroway"="jet_bridge"];way(around:6500,${latitude},${longitude})["building"]["aeroway"="terminal"];);out tags geom 250;`;
+  const pointQuery = `[out:json][timeout:18];(node(around:4500,${latitude},${longitude})["aeroway"="gate"];node(around:4500,${latitude},${longitude})["entrance"];);out tags 120;`;
+  const core = await overpass(coreQuery, 70000);
+  const points = core.length ? await overpass(pointQuery, 40000) : [];
+  const elements = [...core, ...points];
   return elements.map((element) => {
     const geometry = overpassGeometry(element);
-    const type = element.tags?.aeroway === 'terminal' || element.tags?.building === 'terminal' ? 'terminal' : element.tags?.aeroway || 'airport-feature';
+    const type = element.tags?.aeroway === 'terminal' || element.tags?.building === 'terminal' ? 'terminal' : element.tags?.aeroway === 'gate' ? 'gate' : element.tags?.entrance ? 'entrance' : element.tags?.aeroway || 'airport-feature';
     return { id: `osm-way-${element.id}`, type, name: text(element.tags?.name, 160), geometry, tags: element.tags || {} };
-  }).filter((feature) => feature.geometry.length >= 2);
+  }).filter((feature) => feature.geometry.length >= 1);
 }
 
 async function nearbyBridgeGeometry(asset) {
@@ -438,7 +498,9 @@ function sanitizeDescriptor(raw) {
     distinctiveElements: visibility === 'not-visible' || !Array.isArray(raw?.distinctiveElements) ? [] : raw.distinctiveElements.slice(0, 6).map((item) => text(item, 120)).filter(Boolean),
     imageAssessments: Array.isArray(raw?.imageAssessments) ? raw.imageAssessments.slice(0, 20).map((item) => ({
       index: Math.round(finite(item?.index, 0, 19, -1)), exteriorMatch: Boolean(item?.exteriorMatch),
-      targetMatch: Boolean(item?.targetMatch), reason: text(item?.reason, 180),
+      targetMatch: Boolean(item?.targetMatch),
+      role: ['exterior-elevation', 'aerial-site', 'site-plan', 'structural-form', 'unusable'].includes(item?.role) ? item.role : 'unusable',
+      reason: text(item?.reason, 180),
     })).filter((item) => item.index >= 0) : [],
   };
 }
@@ -470,31 +532,54 @@ export async function generateStructureModel(input) {
   const evidenceEntry = evidenceCache.get(String(input?.evidenceToken || ''));
   const evidence = evidenceEntry?.payload?.asset?.id === requestedAsset.id ? evidenceEntry.payload : null;
   const asset = evidenceEntry?.asset?.id === requestedAsset.id ? evidenceEntry.asset : requestedAsset;
-  const cacheKey = createHash('sha256').update(`${asset.id}:${evidence?.images?.map((image) => image.id).join(',') || 'none'}`).digest('hex');
+  const humanPrepared = safeHumanImages(input?.humanImages);
+  const humanEvidenceSignature = humanPrepared.length
+    ? createHash('sha256').update(humanPrepared.map(({ dataUrl }) => dataUrl).join('|')).digest('hex')
+    : 'none';
+  const approvedIds = Array.isArray(input?.approvedImageIds)
+    ? input.approvedImageIds.map(String).slice(0, 15)
+    : Array.isArray(input?.acceptedImageIds) ? input.acceptedImageIds.map(String).slice(0, 15) : [];
+  const approvedIdSignature = approvedIds.slice().sort().join(',') || 'none';
+  const cacheKey = createHash('sha256').update(`${asset.id}:${evidence?.images?.map((image) => image.id).join(',') || 'none'}:${humanEvidenceSignature}:${approvedIdSignature}`).digest('hex');
   const cached = modelCache.get(cacheKey);
   if (cached && Date.now() - cached.savedAt < 24 * 60 * 60 * 1000) return cached.payload;
   const apiKey = process.env.YOLO_AUTO_API_KEY || process.env.OPENAI_API_KEY;
   const model = process.env.YOLO_AUTO_VISION_MODEL || process.env.YOLO_AUTO_MODEL || 'qwen3.8-flash';
-  const humanPrepared = safeHumanImages(input?.humanImages);
   if (!evidence?.images?.length && !humanPrepared.length) {
     return { status: 'source-only', model: null, descriptor: sourceOnlyDescriptor(asset, 'No matching open imagery was available. The model uses mapped geometry and tags only.'), generatedAt: new Date().toISOString(), message: evidence?.message || 'No open imagery was available.' };
   }
   if (!apiKey) {
     return { status: 'source-only', model: null, descriptor: sourceOnlyDescriptor(asset, 'Open imagery was found, but no server-side vision API key is configured. The model uses mapped geometry and tags only.'), generatedAt: new Date().toISOString(), message: 'Set YOLO_AUTO_API_KEY to enable visual analysis.' };
   }
-  const evidenceSelection = (evidence?.images || []).slice(0, 20);
-  const imageResults = humanPrepared.length ? [] : await Promise.allSettled(evidenceSelection.map(async (image) => ({ image, dataUrl: await imageAsDataUrl(image.thumbnailUrl) })));
-  const preparedImages = humanPrepared.length ? humanPrepared : imageResults.filter((result) => result.status === 'fulfilled').map((result) => result.value).slice(0, 15);
-  if (!preparedImages.length) throw new Error('The retrieved evidence images could not be prepared for visual analysis');
+  const approvedIdSet = new Set(approvedIds);
+  const evidenceSelection = (evidence?.images || [])
+    .filter((image) => approvedIdSet.has(String(image.id)))
+    .slice(0, Math.max(0, 15 - humanPrepared.length));
+  const imageResults = await Promise.allSettled(evidenceSelection.map(async (image) => ({ image, dataUrl: await imageAsDataUrl(image.thumbnailUrl) })));
+  const approvedPrepared = imageResults.filter((result) => result.status === 'fulfilled').map((result) => result.value);
+  const preparedImages = [...approvedPrepared, ...humanPrepared].slice(0, 15);
+  if (preparedImages.length === 0) {
+    const retainedImages = preparedImages.map(({ image }) => image);
+    return {
+      status: 'source-only', model, generatedAt: new Date().toISOString(),
+      acceptedImages: retainedImages, acceptedImageIds: retainedImages.map((image) => image.id), rejectedCount: Math.max(0, approvedIds.length + humanPrepared.length - preparedImages.length),
+      descriptor: sourceOnlyDescriptor(asset, 'None of the human-approved views could be prepared for visual analysis. The model uses mapped geometry and tags only.'),
+      message: 'The approved image files could not be prepared for AI analysis. Mapped geometry remains available.',
+    };
+  }
+  const siteFeatureCounts = Object.fromEntries([...new Set((asset.siteFeatures || []).map((feature) => feature.type))].map((type) => [type, asset.siteFeatures.filter((feature) => feature.type === type).length]));
   const facts = {
-    selectedAsset: asset,
-    viewCoverage: { requestedExteriorViews: 15, preparedCandidates: preparedImages.length, availableCandidates: evidence?.images?.length || humanPrepared.length, humanSupplied: humanPrepared.length > 0 },
+    selectedAsset: {
+      id: asset.id, name: asset.name, category: asset.category, center: asset.center, geometryType: asset.geometryType,
+      geometryPointCount: asset.geometry.length, siteFeatureCounts, imported: asset.imported, tags: asset.tags,
+    },
+    viewCoverage: { requestedExteriorViews: 15, preparedCandidates: preparedImages.length, availableCandidates: evidence?.images?.length || humanPrepared.length, humanSupplied: humanPrepared.length > 0, humanApproved: true },
     evidence: preparedImages.map(({ image }) => {
       const { title, description, sourceUrl, latitude, longitude, bearing } = image;
       return { title, description, sourceUrl, latitude, longitude, bearing };
     }),
   };
-  const prompt = `First classify every numbered image. exteriorMatch is true only when the image visibly shows an exterior elevation, exterior massing, runway, taxiway, terminal exterior, bridge deck/towers, or another outside site feature useful for 3D reconstruction. Reject interiors, rooms, decorations, close-up objects, people, foliage-only views, maps, screenshots, and generic nearby scenes. targetMatch is true only when the selected asset is identifiable by visible context or strong image metadata. Then describe the structure using ONLY images where both values are true. The OpenStreetMap footprint, site features, and tags are authoritative and take precedence. If fewer than six useful exterior views remain, set confidence low. Never infer structural safety, hidden structure, damage, or exact dimensions. Return one compact, single-line valid JSON object. Use this shape: {"imageAssessments":[{"index":0,"exteriorMatch":true,"targetMatch":true,"reason":"short reason"}],"targetVisibility":"confirmed|possible|not-visible","confidence":"low|medium|high","summary":"...","evidenceNotes":["..."],"floors":number|null,"heightMeters":number|null,"massing":"single-volume|podium-tower|stepped|multi-wing|courtyard|linear|terminal|bridge","wings":[{"offsetX":number,"offsetZ":number,"widthRatio":number,"depthRatio":number,"heightRatio":number,"rotationDeg":number}],"setbacks":[{"startRatio":number,"scale":number}],"roof":{"type":"flat|gable|hip|dome|vaulted|sawtooth|complex|unknown","color":"#RRGGBB"},"facade":{"material":"concrete|glass|brick|stone|metal|timber|stucco|mixed|unknown","primaryColor":"#RRGGBB","secondaryColor":"#RRGGBB","windowPattern":"grid|horizontal-bands|vertical-bays|irregular|limited|none|unknown","baysX":number,"baysZ":number,"glazingRatio":number,"horizontalBands":boolean,"verticalFins":boolean,"entrance":"central|corner|multiple|unknown"},"distinctiveElements":["..."]}. Facts: ${JSON.stringify(facts)}`;
+  const prompt = `A human reviewed and approved every numbered image before this request. Independently classify each approved image by role. Use exterior-elevation for visible façades and entrances, aerial-site for identifiable overhead or oblique site views, site-plan for clearly identified diagrams or maps of this exact asset, structural-form for bridges, runways, taxiways, terminal piers, roofs, decks, towers, or other useful exterior form, and unusable for anything unrelated or too ambiguous. exteriorMatch is true for the first four useful roles and false for unusable. targetMatch is true only when the selected asset is identifiable by visible context, labels, or strong image metadata. A human-approved site plan or aerial image may guide site topology and massing, but never façade appearance, exact height, or engineering properties. Reject interiors, rooms, decorations, close-up objects, people, foliage-only views, generic maps, and nearby scenes that do not identify the selected asset. Describe the structure using ONLY images where exteriorMatch and targetMatch are both true. The OpenStreetMap footprint, site features, and tags are authoritative and take precedence over every image. For airports, mapped terminal polygons, runways, taxiways, aprons, gates, entrances, and jet bridges define the campus layout; use imagery only to interpret visible terminal massing and façade character. If fewer than six useful views remain, set confidence low. Never infer structural safety, hidden structure, damage, or exact dimensions. Return one compact, single-line valid JSON object. Use this shape: {"imageAssessments":[{"index":0,"exteriorMatch":true,"targetMatch":true,"role":"exterior-elevation|aerial-site|site-plan|structural-form|unusable","reason":"short reason"}],"targetVisibility":"confirmed|possible|not-visible","confidence":"low|medium|high","summary":"...","evidenceNotes":["..."],"floors":number|null,"heightMeters":number|null,"massing":"single-volume|podium-tower|stepped|multi-wing|courtyard|linear|terminal|bridge","wings":[{"offsetX":number,"offsetZ":number,"widthRatio":number,"depthRatio":number,"heightRatio":number,"rotationDeg":number}],"setbacks":[{"startRatio":number,"scale":number}],"roof":{"type":"flat|gable|hip|dome|vaulted|sawtooth|complex|unknown","color":"#RRGGBB"},"facade":{"material":"concrete|glass|brick|stone|metal|timber|stucco|mixed|unknown","primaryColor":"#RRGGBB","secondaryColor":"#RRGGBB","windowPattern":"grid|horizontal-bands|vertical-bays|irregular|limited|none|unknown","baysX":number,"baysZ":number,"glazingRatio":number,"horizontalBands":boolean,"verticalFins":boolean,"entrance":"central|corner|multiple|unknown"},"distinctiveElements":["..."]}. Facts: ${JSON.stringify(facts)}`;
   const response = await fetch('https://yolo-auto.com/v1/chat/completions', {
     method: 'POST',
     headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
@@ -528,14 +613,27 @@ export async function generateStructureModel(input) {
   const descriptor = sanitizeDescriptor(parsedDescriptor);
   const acceptedIndices = new Set(descriptor.imageAssessments.filter((item) => item.exteriorMatch && item.targetMatch).map((item) => item.index));
   const acceptedImages = preparedImages.filter((_, index) => acceptedIndices.has(index)).map(({ image }) => image);
-  if (acceptedImages.length < 6) {
-    return {
-      status: 'needs-human-evidence', model, generatedAt: new Date().toISOString(), acceptedImages, acceptedImageIds: acceptedImages.map((image) => image.id), rejectedCount: preparedImages.length - acceptedImages.length,
-      descriptor: sourceOnlyDescriptor(asset, `Only ${acceptedImages.length} verified exterior view${acceptedImages.length === 1 ? '' : 's'} remained after rejecting interiors and unrelated imagery.`),
-      message: 'Upload at least six clear exterior views from different sides to continue grounded model generation.',
-    };
-  }
-  const payload = { status: descriptor.targetVisibility === 'not-visible' ? 'source-only' : 'generated', model, descriptor, acceptedImages, acceptedImageIds: acceptedImages.map((image) => image.id), viewCountUsed: acceptedImages.length, candidateCount: preparedImages.length, generatedAt: new Date().toISOString(), message: descriptor.targetVisibility === 'not-visible' ? 'The verified exterior views did not reliably identify the selected structure. Mapped geometry remains the model basis.' : acceptedImages.length < 15 ? `Generated from ${acceptedImages.length} verified exterior views; the 15-view target was not fully available.` : null };
+  if (acceptedImages.length < 6) descriptor.confidence = 'low';
+  const usesMappedFallback = descriptor.targetVisibility === 'not-visible' || acceptedImages.length === 0;
+  const payload = {
+    status: usesMappedFallback ? 'source-only' : 'generated',
+    model,
+    descriptor: usesMappedFallback
+      ? sourceOnlyDescriptor(asset, 'The vision model did not retain reliable visual identification of the selected structure. Mapped geometry remains the model basis.')
+      : descriptor,
+    acceptedImages,
+    acceptedImageIds: acceptedImages.map((image) => image.id),
+    viewCountUsed: acceptedImages.length,
+    candidateCount: preparedImages.length,
+    generatedAt: new Date().toISOString(),
+    message: usesMappedFallback
+      ? 'The approved imagery did not reliably identify the selected structure. Mapped geometry remains available.'
+      : acceptedImages.length < 6
+        ? `Generated at low confidence from ${acceptedImages.length} AI-retained view${acceptedImages.length === 1 ? '' : 's'} after the completed human review.`
+        : acceptedImages.length < 15
+          ? `Generated from ${acceptedImages.length} verified exterior views; the 15-view target was not fully available.`
+          : null,
+  };
   modelCache.set(cacheKey, { savedAt: Date.now(), payload });
   return payload;
 }

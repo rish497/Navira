@@ -183,7 +183,17 @@ async function searchNominatim(country, category, locationQuery = '') {
     q: search.term,
   });
   const raw = await queueNominatim(() => fetchJson(`${NOMINATIM_ENDPOINT}?${parameters}`));
-  const assets = (raw.features || [])
+  let directFeatures = [];
+  if (locationQuery) {
+    const directParameters = new URLSearchParams({
+      format: 'geojson', polygon_geojson: '1', polygon_threshold: '0.00002', addressdetails: '1', extratags: '1', namedetails: '1',
+      dedupe: '1', limit: '5', countrycodes: country.cca2.toLowerCase(), q: `${locationQuery}, ${country.name.common}`,
+    });
+    const direct = await queueNominatim(() => fetchJson(`${NOMINATIM_ENDPOINT}?${directParameters}`));
+    directFeatures = direct.features || [];
+  }
+  const unique = new Map([...directFeatures, ...(raw.features || [])].map((feature) => [`${feature.properties?.osm_type}-${feature.properties?.osm_id}`, feature]));
+  const assets = [...unique.values()]
     .filter((feature) => search.accept({
       category: feature.properties?.category,
       type: feature.properties?.type,

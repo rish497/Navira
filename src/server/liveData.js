@@ -1,4 +1,5 @@
 import https from 'node:https';
+import { getRoadRestrictions, routeBounds, routeRestrictionAnalysis } from './roadRestrictions.js';
 
 const SOURCE_ENDPOINTS = {
   eonet: 'https://eonet.gsfc.nasa.gov/api/v3/events?status=open&days=30&limit=100',
@@ -314,6 +315,57 @@ function validGdacsPart(value, pattern) {
   return typeof value === 'string' && pattern.test(value);
 }
 
+function compactText(value) {
+  return typeof value === 'string'
+    ? value.replace(/<[^>]*>/g, ' ').replace(/&nbsp;|&#160;/gi, ' ').replace(/\s+/g, ' ').trim()
+    : '';
+}
+
+function gdeltDate(value) {
+  if (typeof value !== 'string') return null;
+  const match = value.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z$/);
+  return match ? asDate(`${match[1]}-${match[2]}-${match[3]}T${match[4]}:${match[5]}:${match[6]}Z`) : asDate(value);
+}
+
+function newsSearchQuery(event) {
+  const hazard = compactText(event?.type).replace(/[^\p{L}\p{N}\s-]/gu, ' ').trim();
+  const place = compactText(event?.country).replace(/[^\p{L}\p{N}\s-]/gu, ' ').trim();
+  if (hazard && place) return `${hazard} "${place}"`;
+  return compactText(event?.title).replace(/[^\p{L}\p{N}\s-]/gu, ' ').trim();
+}
+
+function normalizeGdacsNews(payload, cacheKey) {
+  return (Array.isArray(payload) ? payload : []).flatMap((item, index) => {
+    if (!item?.title) return [];
+    return [{
+      id: `gdacs-news:${item.oid || item.emmid || `${cacheKey}:${index}`}`,
+      title: compactText(item.title),
+      description: compactText(item.shortdescription || item.description) || null,
+      publishedAt: asDate(item.pubdate || item.dateinsert),
+      publisher: compactText(item.author || item.source) || 'GDACS indexed report',
+      href: item.link || null,
+      classification: 'News reporting',
+      indexSource: 'GDACS',
+    }];
+  });
+}
+
+function normalizeGdeltNews(payload, cacheKey) {
+  return (Array.isArray(payload?.articles) ? payload.articles : []).flatMap((item, index) => {
+    if (!item?.title || !item?.url) return [];
+    return [{
+      id: `gdelt-news:${cacheKey}:${index}:${item.url}`,
+      title: compactText(item.title),
+      description: null,
+      publishedAt: gdeltDate(item.seendate),
+      publisher: compactText(item.domain) || 'Original publisher',
+      href: item.url,
+      classification: 'News reporting',
+      indexSource: 'GDELT',
+    }];
+  });
+}
+
 export async function getGdacsGeometry({ eventtype, eventid, episodeid }) {
   if (!validGdacsPart(eventtype, /^[A-Z]{2}$/) || !validGdacsPart(eventid, /^\d+$/) || !validGdacsPart(episodeid, /^\d+$/)) {
     throw new Error('Invalid GDACS event key');
@@ -330,27 +382,90 @@ export async function getGdacsNews({ eventtype, eventid }) {
   const cacheKey = `${eventtype}:${eventid}`;
   const cached = newsCache.get(cacheKey);
   if (cached && Date.now() - cached.time < CACHE_TTL) return cached.data;
-  const params = new URLSearchParams({ eventtype, eventid, limit: '20' });
-  const payload = await getJson(`https://www.gdacs.org/gdacsapi/api/Emm/getemmnewsbykey?${params}`);
-  const items = (Array.isArray(payload) ? payload : []).flatMap((item, index) => {
-    if (!item?.title) return [];
-    return [{
-      id: item.emmid || `${cacheKey}:${index}`,
-      title: String(item.title),
-      description: item.description || null,
-      publishedAt: asDate(item.pubdate),
-      publisher: item.source || 'Data unavailable',
-      href: item.link || null,
-      classification: 'News reporting',
-    }];
+  const liveData = await getLiveData();
+  const event = liveData.events.find((item) => item.gdacsKey?.eventtype === eventtype && item.gdacsKey?.eventid === eventid);
+  if (!event) throw new Error('The selected GDACS event is no longer present in the current source window');
+
+  const gdacsParams = new URLSearchParams({ eventtype, eventid });
+  const query = newsSearchQuery(event);
+  const gdeltParams = new URLSearchParams({
+    query,
+    mode: 'artlist',
+    format: 'json',
+    maxrecords: '20',
+    sort: 'datedesc',
+    timespan: '3months',
   });
+  const results = await Promise.allSettled([
+    getJson(`https://www.gdacs.org/gdacsapi/api/News/getnewsbygdacskey?${gdacsParams}`, 20000),
+    getJson(`https://api.gdeltproject.org/api/v2/doc/doc?${gdeltParams}`, 30000, { 'User-Agent': 'NAVIRA/1.0 disaster-reporting gateway' }),
+  ]);
+  const gdacsItems = results[0].status === 'fulfilled' ? normalizeGdacsNews(results[0].value, cacheKey) : [];
+  const gdeltItems = results[1].status === 'fulfilled' ? normalizeGdeltNews(results[1].value, cacheKey) : [];
+  const officialItems = event.sourceUrl ? [{
+    id: `gdacs-record:${cacheKey}`,
+    title: `${event.title} — official event record`,
+    description: [event.description, event.severity, event.status ? `Status: ${event.status}` : null].filter(Boolean).join(' · '),
+    publishedAt: event.updatedAt || event.timestamp,
+    publisher: 'Global Disaster Alert and Coordination System',
+    href: event.sourceUrl,
+    classification: 'Verified agency event record',
+    indexSource: 'GDACS official',
+  }] : [];
+  const seen = new Set();
+  const newsItems = [...gdacsItems, ...gdeltItems];
+  const items = [...officialItems, ...newsItems]
+    .filter((item) => {
+      const key = item.href || item.title.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .sort((a, b) => Date.parse(b.publishedAt || 0) - Date.parse(a.publishedAt || 0));
+  const fetchedAt = new Date().toISOString();
+  const sources = [
+    {
+      id: 'gdacs-record',
+      name: 'GDACS verified event record',
+      href: event.sourceUrl || 'https://www.gdacs.org/',
+      status: officialItems.length ? 'available' : 'unavailable',
+      count: officialItems.length,
+      fetchedAt,
+      error: officialItems.length ? null : 'The event did not publish a source URL',
+    },
+    {
+      id: 'gdacs-news',
+      name: 'GDACS event reporting',
+      href: 'https://www.gdacs.org/',
+      status: results[0].status === 'fulfilled' ? 'available' : 'unavailable',
+      count: gdacsItems.length,
+      fetchedAt,
+      error: results[0].status === 'rejected' ? results[0].reason?.message || 'Source request failed' : null,
+    },
+    {
+      id: 'gdelt',
+      name: 'GDELT news index',
+      href: 'https://www.gdeltproject.org/',
+      status: results[1].status === 'fulfilled' ? 'available' : 'unavailable',
+      count: gdeltItems.length,
+      fetchedAt,
+      error: results[1].status === 'rejected' ? results[1].reason?.message || 'Source request failed' : null,
+    },
+  ];
   const data = {
-    fetchedAt: new Date().toISOString(),
-    source: { name: 'GDACS / Europe Media Monitor', href: 'https://www.gdacs.org/' },
+    fetchedAt,
+    source: { name: 'GDACS + GDELT', href: 'https://www.gdacs.org/' },
+    sources,
+    availability: items.length ? 'available' : sources.some((source) => source.status === 'available') ? 'available-empty' : 'unavailable',
+    notice: newsItems.length
+      ? `${newsItems.length} event-linked media reports were returned alongside the verified event record.`
+      : sources.some((source) => source.status === 'available')
+        ? 'No event-linked media articles were returned. The verified GDACS event record remains available.'
+        : 'Reporting indexes could not be reached. The verified disaster record remains available.',
     classification: 'News reporting — not an agency-verified incident record',
     items,
   };
-  newsCache.set(cacheKey, { time: Date.now(), data });
+  if (items.length || sources.some((source) => source.status === 'available')) newsCache.set(cacheKey, { time: Date.now(), data });
   return data;
 }
 
@@ -389,21 +504,32 @@ export async function getRoadRoutes({ startLng, startLat, endLng, endLat }) {
   const start = [coordinate(startLng, -180, 180), coordinate(startLat, -90, 90)];
   const end = [coordinate(endLng, -180, 180), coordinate(endLat, -90, 90)];
   if (start.includes(null) || end.includes(null)) throw new Error('Invalid route coordinates');
-  const cacheKey = [...start, ...end].map((value) => value.toFixed(5)).join(':');
+  const roadAwareness = await getRoadRestrictions({ bounds: routeBounds(start, end) });
+  const cacheKey = `${[...start, ...end].map((value) => value.toFixed(5)).join(':')}:${roadAwareness.fingerprint}`;
   const cached = routeCache.get(cacheKey);
   if (cached && Date.now() - cached.time < CACHE_TTL) return cached.data;
   const coordinates = `${start[0]},${start[1]};${end[0]},${end[1]}`;
   const params = new URLSearchParams({ alternatives: 'true', steps: 'true', overview: 'full', geometries: 'geojson' });
   const payload = await getJson(`https://router.project-osrm.org/route/v1/driving/${coordinates}?${params}`, 30000, { 'User-Agent': 'NAVIRA/1.0 route comparison' });
   if (payload.code !== 'Ok') throw new Error(payload.message || 'Routing engine did not return a route');
-  const routes = (payload.routes || []).flatMap((route, index) => {
+  const assessedRoutes = (payload.routes || []).flatMap((route, index) => {
     const geometry = sanitizeGeometry(route.geometry);
     if (geometry?.type !== 'LineString') return [];
+    const restrictionAnalysis = routeRestrictionAnalysis(geometry, roadAwareness.restrictions);
     return [{
       id: `osrm:${index}:${Math.round(route.distance || 0)}`,
       durationSeconds: finiteNumber(route.duration),
       distanceMeters: finiteNumber(route.distance),
       geometry,
+      roadRestrictionStatus: restrictionAnalysis.blocked
+        ? 'CONFIRMED_CLOSED'
+        : restrictionAnalysis.restrictions.some((item) => item.status === 'REPORTED_OBSTRUCTION')
+          ? 'REPORTED_OBSTRUCTION'
+          : restrictionAnalysis.restrictions.some((item) => item.status === 'STALE_UNKNOWN')
+            ? 'STALE_UNKNOWN'
+            : 'OPEN_NO_KNOWN_RESTRICTION',
+      roadRestrictions: restrictionAnalysis.restrictions,
+      blockedByVerifiedClosure: restrictionAnalysis.blocked,
       roadSummary: (route.legs || []).flatMap((leg) => leg.summary ? [leg.summary] : []).join(' · ') || null,
       steps: (route.legs || []).flatMap((leg) => leg.steps || []).flatMap((step, stepIndex) => {
         const location = step.maneuver?.location;
@@ -421,10 +547,19 @@ export async function getRoadRoutes({ startLng, startLat, endLng, endLat }) {
       }),
     }];
   });
+  const routes = assessedRoutes.filter((route) => !route.blockedByVerifiedClosure);
   const data = {
     fetchedAt: new Date().toISOString(),
     source: { name: 'OSRM', href: 'https://project-osrm.org/', attribution: 'Routing from OpenStreetMap road data' },
     routes,
+    rejectedRoutes: assessedRoutes.filter((route) => route.blockedByVerifiedClosure).map((route) => ({ id: route.id, roadRestrictions: route.roadRestrictions })),
+    roadAwareness: {
+      ...roadAwareness.coverage,
+      generatedAt: roadAwareness.generatedAt,
+      fingerprint: roadAwareness.fingerprint,
+      sources: roadAwareness.sources,
+      relevantRestrictions: roadAwareness.restrictions,
+    },
   };
   routeCache.set(cacheKey, { time: Date.now(), data });
   return data;

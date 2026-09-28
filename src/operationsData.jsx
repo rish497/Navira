@@ -4,12 +4,13 @@ import { actorHeaders, useAuth } from './auth';
 const EMPTY = {
   helpRequests: [], locations: [], dispatches: [], resources: [], allocations: [],
   infrastructure: [], simulations: [], evacuations: [], incidentReports: [],
-  communityEvents: [], notifications: [], updatedAt: null,
+  communityEvents: [], notifications: [], incidents: [], activeIncidentId: null,
+  auditEvents: [], comparisonScenarios: [], navigationSessions: [], updatedAt: null,
 };
 const OperationsContext = createContext(null);
 
 export function OperationsProvider({ children }) {
-  const { profile } = useAuth();
+  const { profile, signOut } = useAuth();
   const [data, setData] = useState(EMPTY);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -19,11 +20,12 @@ export function OperationsProvider({ children }) {
     setLoading(true); setError(null);
     try {
       const response = await fetch('/api/operations', { headers: actorHeaders(profile), cache: 'no-store' });
+      if (response.status === 401) { await signOut(); throw new Error('Your session expired. Sign in again.'); }
       if (!response.ok) throw new Error(`Operations request failed (${response.status})`);
       setData(await response.json());
     } catch (reason) { setError(reason.message || 'Operational records are unavailable'); }
     finally { setLoading(false); }
-  }, [profile]);
+  }, [profile, signOut]);
 
   useEffect(() => { refresh(); }, [refresh]);
 
@@ -44,10 +46,11 @@ export function OperationsProvider({ children }) {
     if (!profile) throw new Error('Sign in is required');
     const response = await fetch(`/api/operations/${action}`, { method, headers: actorHeaders(profile), body: JSON.stringify(payload || {}) });
     const result = await response.json().catch(() => ({}));
+    if (response.status === 401) { await signOut(); throw new Error('Your session expired. Sign in again.'); }
     if (!response.ok) throw new Error(result.error || `Operation failed (${response.status})`);
     await refresh();
     return result;
-  }, [profile, refresh]);
+  }, [profile, refresh, signOut]);
 
   const value = useMemo(() => ({ data, loading, error, refresh, mutate }), [data, loading, error, refresh, mutate]);
   return <OperationsContext.Provider value={value}>{children}</OperationsContext.Provider>;

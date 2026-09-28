@@ -8,7 +8,7 @@ import {
   ArrowRight, ArrowSquareOut, BellRinging, Broadcast, CaretRight, ChartBar,
   ClockCounterClockwise, Database, Flask, ListBullets,
   MapTrifold, NewspaperClipping, Package, Path as RouteIcon, ShieldCheck,
-  SignOut, SpinnerGap, UserFocus, UsersThree, WarningCircle, X,
+  SignOut, Siren, SpinnerGap, Scroll, UserFocus, UsersThree, WarningCircle, X,
 } from '@phosphor-icons/react';
 import LiveMap from './LiveMap';
 import { useLiveData } from './liveData';
@@ -23,12 +23,13 @@ import {
   DispatchView, EvacuationView, InfrastructureView, LocalOperationsMap,
   RequestsView, ResourcesView, SimulationView,
 } from './OperationsViews';
+import { AuditTrailView, IncidentRibbon, IncidentsView } from './OperationalContextViews';
 
 gsap.registerPlugin(ScrollTrigger);
 
 function navigationFor(role) {
   const understand = role === 'operator'
-    ? [['command', 'Response chain', Broadcast], ['events', 'Verified events', ListBullets], ['timeline', 'Source timeline', ClockCounterClockwise], ['analytics', 'Location analysis', ChartBar], ['news', 'News context', NewspaperClipping]]
+    ? [['command', 'Response chain', Broadcast], ['incidents', 'Command incidents', Siren], ['events', 'Verified events', ListBullets], ['timeline', 'Source timeline', ClockCounterClockwise], ['audit', 'Audit trail', Scroll], ['analytics', 'Location analysis', ChartBar], ['news', 'News context', NewspaperClipping]]
     : [['command', 'Response chain', Broadcast], ['map', 'Live disaster map', MapTrifold], ['events', 'Verified events', ListBullets], ['timeline', 'Source timeline', ClockCounterClockwise], ['analytics', 'Location analysis', ChartBar], ['news', 'News context', NewspaperClipping]];
   const protect = role === 'operator'
     ? [['local-map', 'People + hazards', MapTrifold], ['requests', 'Help requests', UserFocus], ['evacuation', 'Escape routes', RouteIcon], ['dispatch', 'Responder dispatch', UsersThree], ['resources', 'Resource coordination', Package]]
@@ -46,7 +47,7 @@ const PAGE_COPY = {
   events: ['Event ledger', 'Every row comes directly from NASA EONET, GDACS, or USGS.'],
   timeline: ['Source chronology', 'A time-ordered record built only from timestamps published by the upstream sources.'],
   analytics: ['Observed event analysis', 'Counts describe the records currently returned by the connected sources.'],
-  news: ['Reporting context', 'Event-linked media reporting from GDACS is kept separate from verified agency records.'],
+  news: ['Reporting context', 'Official event bulletins and event-linked reporting stay clearly separated by source and verification status.'],
 };
 
 function formatTime(value, { short = false } = {}) {
@@ -78,8 +79,8 @@ function LoadingState({ label = 'Connecting to live sources' }) {
   return <div className="state-panel"><SpinnerGap className="spin" size={24} /><strong>{label}</strong></div>;
 }
 
-function FailureState({ message, onRetry }) {
-  return <div className="state-panel state-panel--error"><WarningCircle size={26} /><div><strong>Live data unavailable</strong><p>{message || 'The source request did not return usable data.'}</p></div>{onRetry && <button className="text-button" onClick={onRetry}>Retry connection <ArrowRight /></button>}</div>;
+function FailureState({ title = 'Live data unavailable', message, onRetry }) {
+  return <div className="state-panel state-panel--error"><WarningCircle size={26} /><div><strong>{title}</strong><p>{message || 'The source request did not return usable data.'}</p></div>{onRetry && <button className="text-button" onClick={onRetry}>Retry connection <ArrowRight /></button>}</div>;
 }
 
 function SourceRail({ sources, generatedAt, compact = false, reveal = false }) {
@@ -367,7 +368,7 @@ function CommandView() {
   const { profile } = useAuth();
   const { data } = useOperations();
   const activeRequests = data.helpRequests.filter((item) => item.status !== 'resolved').length;
-  const activeDispatches = data.dispatches.filter((item) => item.status !== 'complete').length;
+  const activeDispatches = data.dispatches.filter((item) => !['complete', 'resolved'].includes(item.status)).length;
   const testRecords = data.infrastructure.length + data.simulations.length;
   return <><PageIntro view="command" /><section className="command-chain" aria-label="NAVIRA response chain"><article><span>01 / UNDERSTAND</span><strong>{events.length}</strong><p>current verified source records</p><Link to="/app/map">Open live picture <ArrowRight /></Link></article><article><span>02 / PROTECT</span><strong>{activeRequests + data.evacuations.length + activeDispatches}</strong><p>{activeRequests} active requests · {data.evacuations.length} shared routes · {activeDispatches} active dispatches</p><Link to="/app/local-map">Open protection flow <ArrowRight /></Link></article><article><span>03 / TEST</span><strong>{testRecords}</strong><p>{data.infrastructure.length} recorded assets · {data.simulations.length} saved simulations</p>{profile.role === 'operator' ? <Link to="/app/simulation">Open simulation lab <ArrowRight /></Link> : <small>Operator workspace</small>}</article></section><div className="command-layout"><div className="command-layout__map"><LiveMap events={events} selectedEvent={selectedEvent} onSelect={selectEvent} variant="command" /></div><div className="command-layout__rail"><div className="rail-title"><span>LIVE QUEUE</span><b>{events.length} source records</b></div><EventList events={events} selectedEvent={selectedEvent} onSelect={selectEvent} limit={12} /></div><EventDetail key={selectedEvent?.id || 'empty'} event={selectedEvent} /></div></>;
 }
@@ -423,16 +424,17 @@ function NewsView() {
     if (!location) return true; const distance = eventDistanceKm(location, event); return Number.isFinite(distance) && distance <= radiusKm;
   }), [events, location, radiusKm]);
   const active = selectedEvent?.gdacsKey && gdacsEvents.some((event) => event.id === selectedEvent.id) ? selectedEvent : gdacsEvents[0];
-  const [state, setState] = useState({ loading: false, data: null, error: null });
+  const [state, setState] = useState({ loading: false, data: null, error: null }); const [reloadToken, setReloadToken] = useState(0);
   useEffect(() => {
     if (!active?.gdacsKey) { setState({ loading: false, data: null, error: null }); return; }
     const params = new URLSearchParams({ eventtype: active.gdacsKey.eventtype, eventid: active.gdacsKey.eventid });
     let current = true;
     setState({ loading: true, data: null, error: null });
-    fetch(`/api/gdacs-news?${params}`, { cache: 'no-store' }).then((response) => { if (!response.ok) throw new Error('News feed unavailable'); return response.json(); }).then((data) => current && setState({ loading: false, data, error: null })).catch((error) => current && setState({ loading: false, data: null, error: error.message }));
+    fetch(`/api/gdacs-news?${params}`, { cache: 'no-store' }).then(async (response) => { if (!response.ok) { const body = await response.json().catch(() => ({})); throw new Error(body.error || `Reporting request failed (${response.status})`); } return response.json(); }).then((data) => current && setState({ loading: false, data, error: null })).catch((error) => current && setState({ loading: false, data: null, error: error.message }));
     return () => { current = false; };
-  }, [active?.id]);
-  return <><PageIntro view="news" /><LocationFilter value={location} radiusKm={radiusKm} onChange={setLocation} onRadiusChange={setRadiusKm} label="Filter reporting by location" /><div className="news-layout"><aside><span>GDACS EVENTS · {gdacsEvents.length}</span>{gdacsEvents.map((event) => <button className={active?.id === event.id ? 'is-selected' : ''} key={event.id} onClick={() => selectEvent(event)}><strong>{event.title}</strong><small>{event.country || event.type} · {formatTime(event.timestamp, { short: true })}</small></button>)}</aside><section className="news-feed"><div className="news-feed__warning"><NewspaperClipping /><div><strong>Reporting context for {active?.title || 'the selected area'}</strong><span>GDACS indexes these media reports. They remain separate from agency-verified incident facts.</span></div></div>{!active ? <div className="empty-data"><strong>No GDACS event in this area</strong><span>Clear the location or widen the radius to inspect other reporting.</span></div> : state.loading ? <LoadingState label="Loading event-linked reporting" /> : state.error ? <FailureState message={state.error} /> : state.data?.items?.length ? <>{state.data.items.map((item) => <article key={item.id}><div><span>{item.publisher}</span><time>{formatTime(item.publishedAt, { short: true })}</time></div><h2>{item.title}</h2><p>{item.description || 'No description was supplied by the indexed report.'}</p>{item.href && <a href={item.href} target="_blank" rel="noreferrer">Read at original publisher <ArrowSquareOut /></a>}</article>)}<small className="feed-freshness">GDACS / Europe Media Monitor · retrieved {formatTime(state.data.fetchedAt)}</small></> : <div className="empty-data"><strong>No indexed reporting returned</strong><span>The event remains available in the verified event ledger.</span></div>}</section></div></>;
+  }, [active?.id, reloadToken]);
+  const sourceSummary = state.data?.sources?.map((source) => `${source.name}: ${source.status === 'available' ? `${source.count} reports` : 'temporarily unavailable'}`).join(' · ');
+  return <><PageIntro view="news" /><LocationFilter value={location} radiusKm={radiusKm} onChange={setLocation} onRadiusChange={setRadiusKm} label="Filter reporting by location" /><div className="news-layout"><aside><span>GDACS EVENTS · {gdacsEvents.length}</span>{gdacsEvents.map((event) => <button className={active?.id === event.id ? 'is-selected' : ''} key={event.id} onClick={() => selectEvent(event)}><strong>{event.title}</strong><small>{event.country || event.type} · {formatTime(event.timestamp, { short: true })}</small></button>)}</aside><section className="news-feed"><div className="news-feed__warning"><NewspaperClipping /><div><strong>Reporting context for {active?.title || 'the selected area'}</strong><span>Verified GDACS records and indexed media reporting are labeled separately. Media articles are context, not agency-verified incident facts.</span></div></div>{!active ? <div className="empty-data"><strong>No GDACS event in this area</strong><span>Clear the location or widen the radius to inspect other reporting.</span></div> : state.loading ? <LoadingState label="Loading event-linked reporting" /> : state.error ? <FailureState title="Reporting feed unavailable" message={state.error} onRetry={() => setReloadToken((value) => value + 1)} /> : state.data?.items?.length ? <>{state.data.items.map((item) => <article key={item.id}><div><span>{item.classification} · {item.publisher} · {item.indexSource}</span><time>{formatTime(item.publishedAt, { short: true })}</time></div><h2>{item.title}</h2><p>{item.description || 'No description was supplied by the indexed report.'}</p>{item.href && <a href={item.href} target="_blank" rel="noreferrer">{item.classification === 'Verified agency event record' ? 'Open official event record' : 'Read at original publisher'} <ArrowSquareOut /></a>}</article>)}<small className="feed-freshness">{state.data?.notice} {sourceSummary} · retrieved {formatTime(state.data.fetchedAt)}</small></> : <><div className="empty-data"><strong>No indexed reporting returned</strong><span>{state.data?.notice || 'The verified event remains available in the event ledger.'}</span></div>{sourceSummary && <small className="feed-freshness">{sourceSummary} · checked {formatTime(state.data?.fetchedAt)}</small>}</>}</section></div></>;
 }
 
 function WorkspacePage() {
@@ -441,19 +443,20 @@ function WorkspacePage() {
   const { data, sources, loading, error, refresh } = useLiveData();
   if (loading && !data) return <div className="workspace-state"><BrandMark /><LoadingState /></div>;
   if (error && !data) return <div className="workspace-state"><BrandMark /><FailureState message={error} onRetry={refresh} /></div>;
-  if (profile.role !== 'operator' && ['dispatch', 'resources', 'infrastructure', 'simulation'].includes(view)) return <Navigate to="/app/local-map" replace />;
+  if (profile.role !== 'operator' && ['incidents', 'audit', 'dispatch', 'resources', 'infrastructure', 'simulation'].includes(view)) return <Navigate to="/app/local-map" replace />;
   let content;
-  if (view === 'command') content = <CommandView />; else if (view === 'map') content = <MapView />; else if (view === 'events') content = <LedgerView />; else if (view === 'timeline') content = <TimelineView />; else if (view === 'analytics') content = <AnalyticsView />; else if (view === 'news') content = <NewsView />; else if (view === 'local-map') content = <LocalOperationsMap />; else if (view === 'requests') content = <RequestsView />; else if (view === 'evacuation') content = <EvacuationView />; else if (view === 'dispatch') content = <DispatchView />; else if (view === 'resources') content = <ResourcesView />; else if (view === 'infrastructure') content = <InfrastructureView />; else if (view === 'simulation') content = <SimulationView />; else return <Navigate to="/app/command" replace />;
+  if (view === 'command') content = <CommandView />; else if (view === 'incidents') content = <IncidentsView />; else if (view === 'audit') content = <AuditTrailView />; else if (view === 'map') content = <MapView />; else if (view === 'events') content = <LedgerView />; else if (view === 'timeline') content = <TimelineView />; else if (view === 'analytics') content = <AnalyticsView />; else if (view === 'news') content = <NewsView />; else if (view === 'local-map') content = <LocalOperationsMap />; else if (view === 'requests') content = <RequestsView />; else if (view === 'evacuation') content = <EvacuationView />; else if (view === 'dispatch') content = <DispatchView />; else if (view === 'resources') content = <ResourcesView />; else if (view === 'infrastructure') content = <InfrastructureView />; else if (view === 'simulation') content = <SimulationView />; else return <Navigate to="/app/command" replace />;
   return <><main className="workspace-main"><div key={view} className="workspace-view">{content}</div></main><SourceRail sources={sources} generatedAt={data?.generatedAt} compact /></>;
 }
 
 function Workspace() {
   const [navOpen, setNavOpen] = useState(false);
-  return <div className="workspace-shell"><SideNavigation open={navOpen} onClose={() => setNavOpen(false)} /><ModuleNavigation /><div className="workspace-surface"><WorkspaceHeader onMenu={() => setNavOpen(true)} /><CivilianAlertBar /><Routes><Route path=":view" element={<WorkspacePage />} /><Route path="*" element={<Navigate to="command" replace />} /></Routes></div></div>;
+  return <div className="workspace-shell"><SideNavigation open={navOpen} onClose={() => setNavOpen(false)} /><ModuleNavigation /><div className="workspace-surface"><WorkspaceHeader onMenu={() => setNavOpen(true)} /><IncidentRibbon /><CivilianAlertBar /><Routes><Route path=":view" element={<WorkspacePage />} /><Route path="*" element={<Navigate to="command" replace />} /></Routes></div></div>;
 }
 
 function ProtectedRoute({ children }) {
-  const { profile } = useAuth();
+  const { profile, ready } = useAuth();
+  if (!ready) return <div className="workspace-state"><BrandMark /><LoadingState label="Verifying secure session" /></div>;
   return profile ? children : <Navigate to="/login" replace />;
 }
 

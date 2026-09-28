@@ -8,6 +8,8 @@ import './signal-foundry.css';
 import { LiveDataProvider } from './liveData';
 import { AuthProvider } from './auth';
 import { OperationsProvider } from './operationsData';
+import { RoadDataProvider } from './roadData';
+import { AlertDataProvider } from './alertData';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
@@ -15,7 +17,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       <AuthProvider>
         <LiveDataProvider>
           <OperationsProvider>
-            <App />
+            <RoadDataProvider><AlertDataProvider><App /></AlertDataProvider></RoadDataProvider>
           </OperationsProvider>
         </LiveDataProvider>
       </AuthProvider>

@@ -1,5 +1,7 @@
 import {
   booleanPointInPolygon,
+  booleanIntersects,
+  buffer,
   distance,
   flattenEach,
   length,
@@ -9,6 +11,7 @@ import {
   point,
   pointToLineDistance,
   polygonToLine,
+  feature,
 } from '@turf/turf';
 
 function featureFromGeometry(geometry, properties = {}) {
@@ -166,6 +169,20 @@ export function analyzeRoutes(routes, hazards) {
     };
   });
   return { routes: resolved, fastestId: fastest.id, saferId: lowerExposure?.id || null };
+}
+
+export function roadRestrictionHits(routeGeometry, restrictions) {
+  if (routeGeometry?.type !== 'LineString') return [];
+  const route = feature(routeGeometry);
+  return (restrictions || []).filter((restriction) => {
+    try {
+      const restrictionFeature = feature(restriction.geometry);
+      const comparison = ['LineString', 'MultiLineString', 'Point'].includes(restriction.geometry?.type)
+        ? buffer(restrictionFeature, restriction.status === 'CONFIRMED_CLOSED' ? 0.035 : 0.02, { units: 'kilometers' })
+        : restrictionFeature;
+      return comparison ? booleanIntersects(route, comparison) : false;
+    } catch { return false; }
+  });
 }
 
 export function formatDistance(kilometers) {

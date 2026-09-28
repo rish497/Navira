@@ -6,7 +6,6 @@ import {
   SpinnerGap, Warning, WarningCircle, X,
 } from '@phosphor-icons/react';
 import { useOperations } from '../operationsData';
-import FootprintEditor from './FootprintEditor';
 import SimulationViewport from './SimulationViewport';
 import './lab.css';
 
@@ -30,9 +29,29 @@ const scenarioDefaults = {
 const initialFootprint = [{ x: .18, y: .2 }, { x: .82, y: .2 }, { x: .82, y: .8 }, { x: .18, y: .8 }];
 const time = (value) => value ? new Date(value).toLocaleString() : 'Data unavailable';
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+const evidenceBasis = (images = []) => {
+  const human = images.filter((image) => image.dataUrl || image.provider === 'Human-supplied evidence' || image.license === 'Supplied by operator').length;
+  const open = Math.max(0, images.length - human);
+  return [human ? `${human} operator upload${human === 1 ? '' : 's'}` : '', open ? `${open} open-source view${open === 1 ? '' : 's'}` : ''].filter(Boolean).join(' + ') || 'No reviewed imagery';
+};
+const clampPoint = (point) => ({ x: clamp(Number(point.x), .02, .98), y: clamp(Number(point.y), .02, .98) });
+const edgeNormal = (points, index) => {
+  const start = points[index];
+  const end = points[(index + 1) % points.length];
+  if (!start || !end) return { x: 0, y: 0 };
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  const length = Math.hypot(dx, dy) || 1;
+  const signedArea = points.reduce((sum, point, pointIndex) => {
+    const next = points[(pointIndex + 1) % points.length];
+    return sum + point.x * next.y - next.x * point.y;
+  }, 0);
+  return signedArea >= 0 ? { x: dy / length, y: -dx / length } : { x: -dy / length, y: dx / length };
+};
 const modelStages = [
   { id: 'locate', label: 'Lock mapped record', detail: 'Preserve coordinates, source tags, and footprint.' },
   { id: 'imagery', label: 'Retrieve visual evidence', detail: 'Search reusable Wikimedia Commons imagery near and by name.' },
+  { id: 'review', label: 'Human evidence gate', detail: 'Approve, reject, and add evidence before any AI analysis.' },
   { id: 'analysis', label: 'Analyze visible architecture', detail: 'Send retrieved evidence to the server-side vision model.' },
   { id: 'geometry', label: 'Assemble procedural geometry', detail: 'Combine mapped geometry with validated visual observations.' },
   { id: 'complete', label: 'Model ready', detail: 'Load the generated approximation into the 3D test chamber.' },
@@ -65,17 +84,17 @@ function prepareHumanEvidence(file, index) {
       canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
       URL.revokeObjectURL(url);
       const dataUrl = canvas.toDataURL('image/jpeg', .8);
-      resolve({ id: `human-${index}`, name: file.name || `Exterior view ${index + 1}`, title: file.name || `Exterior view ${index + 1}`, dataUrl, thumbnailUrl: dataUrl, description: 'Human-supplied exterior evidence', license: 'Supplied by operator' });
+      resolve({ id: `human-${Date.now()}-${index}`, name: file.name || `Evidence ${index + 1}`, title: file.name || `Evidence ${index + 1}`, dataUrl, thumbnailUrl: dataUrl, description: 'Human-supplied visual evidence', license: 'Supplied by operator' });
     };
     image.onerror = () => { URL.revokeObjectURL(url); reject(new Error(`${file.name || 'An image'} could not be read.`)); };
     image.src = url;
   });
 }
 
-function ModelGenerationDialog({ state, asset, previewModel, reducedMotion, onClose, onRetry, onHumanEvidence }) {
+function ModelGenerationDialog({ state, asset, previewModel, reducedMotion, onClose, onRetry, onEvidenceReview }) {
   const closeButton = useRef(null);
-  const [humanImages, setHumanImages] = useState([]);
-  const [humanError, setHumanError] = useState(null);
+  const [reviewItems, setReviewItems] = useState([]);
+  const [reviewError, setReviewError] = useState(null);
   useEffect(() => {
     if (!state.open) return undefined;
     const previousOverflow = document.body.style.overflow;
@@ -85,11 +104,25 @@ function ModelGenerationDialog({ state, asset, previewModel, reducedMotion, onCl
     window.addEventListener('keydown', escape);
     return () => { document.body.style.overflow = previousOverflow; window.removeEventListener('keydown', escape); };
   }, [state.open]);
-  useEffect(() => { setHumanImages([]); setHumanError(null); }, [asset?.id]);
+  useEffect(() => {
+    if (!state.awaitingReview) return;
+    setReviewItems((state.images || []).map((image) => ({ ...image, decision: image.preapproved ? 'approved' : 'pending' })));
+    setReviewError(null);
+  }, [state.reviewKey, state.awaitingReview]);
   if (!state.open || !asset) return null;
-  const activeIndex = state.error ? -1 : state.awaitingHuman ? 2 : modelStages.findIndex((item) => item.id === state.stage);
+  const activeIndex = state.error ? -1 : modelStages.findIndex((item) => item.id === state.stage);
   const descriptor = state.result?.descriptor;
   const assembling = (state.stage === 'geometry' || state.stage === 'complete') && previewModel;
+  const approvedCount = reviewItems.filter((image) => image.decision === 'approved').length;
+  const rejectedCount = reviewItems.filter((image) => image.decision === 'rejected').length;
+  const decide = (id, decision) => setReviewItems((current) => {
+    if (decision === 'approved' && current.filter((image) => image.decision === 'approved' && image.id !== id).length >= 15) {
+      setReviewError('The vision run accepts a maximum of 15 approved images. Reject or deselect another image first.');
+      return current;
+    }
+    setReviewError(null);
+    return current.map((image) => image.id === id ? { ...image, decision } : image);
+  });
   const assemblyLabel = state.assemblyProgress < .18 ? 'Raising primary supports'
     : state.assemblyProgress < .42 ? 'Setting floor levels'
       : state.assemblyProgress < .7 ? 'Building the structural envelope'
@@ -104,7 +137,7 @@ function ModelGenerationDialog({ state, asset, previewModel, reducedMotion, onCl
       <div className="model-generation__body">
         <ol className="model-generation__stages">
           {modelStages.map((item, index) => {
-            const needsInput = state.awaitingHuman && index === 2;
+            const needsInput = state.awaitingReview && item.id === 'review';
             const done = !state.error && !needsInput && (activeIndex > index || (state.stage === 'complete' && item.id === 'complete'));
             const active = !state.error && !needsInput && activeIndex === index && !done;
             return <li key={item.id} className={done ? 'is-done' : needsInput ? 'needs-input' : active ? 'is-active' : ''}>
@@ -115,24 +148,32 @@ function ModelGenerationDialog({ state, asset, previewModel, reducedMotion, onCl
         </ol>
         <section className="model-generation__evidence">
           <div className="model-generation__evidence-head">
-            <span>{state.error ? 'PIPELINE INTERRUPTED' : state.awaitingHuman ? 'HUMAN EVIDENCE REQUIRED' : assembling ? state.stage === 'complete' ? 'MODEL ASSEMBLED' : 'LIVE GEOMETRY ASSEMBLY' : 'EXTERIOR EVIDENCE VALIDATION'}</span>
-            <strong>{state.error ? 'The model could not be completed' : state.awaitingHuman ? 'Open sources did not provide enough verified exterior views' : assembling ? assemblyLabel : 'Candidate images are being checked before they enter the model'}</strong>
+            <span>{state.error ? 'PIPELINE INTERRUPTED' : state.awaitingReview ? 'MANDATORY HUMAN EVIDENCE GATE' : assembling ? state.stage === 'complete' ? 'MODEL ASSEMBLED' : 'LIVE GEOMETRY ASSEMBLY' : 'GROUNDED VISUAL ANALYSIS'}</span>
+            <strong>{state.error ? 'The model could not be completed' : state.awaitingReview ? 'Approve every useful view and reject everything that should not reach the model' : assembling ? assemblyLabel : 'AI is checking only the evidence you approved'}</strong>
           </div>
           {state.error ? <div className="model-generation__error"><WarningCircle /><div><strong>Generation unavailable</strong><p>{state.error}</p><p>The current structure will not be replaced with invented detail.</p></div></div> : <>
-            {state.awaitingHuman ? <div className="model-generation__human">
-              <div className="model-generation__human-copy"><div><SourceBadge tone="assumption">Human in the loop</SourceBadge><h3>Add clear exterior views</h3><p>{state.result?.message} Use wide shots from the front, rear, both sides, and corners. Avoid interiors, people-only photos, maps, and close-up objects.</p></div><strong>{humanImages.length}/15</strong></div>
+            {state.awaitingReview ? <div className="model-generation__review">
+              <div className="model-generation__human-copy"><div><SourceBadge tone="assumption">Human approval required</SourceBadge><h3>Build the evidence set</h3><p>{state.result?.message || 'Nothing is sent to AI until you approve it.'} Exterior elevations, corners, aerial views, and clearly identified site plans can be useful. Reject interiors, unrelated places, and images where the selected asset cannot be identified.</p></div><strong>{approvedCount}/15</strong></div>
+              <div className="model-generation__review-summary"><span><b>{approvedCount}</b> approved</span><span><b>{rejectedCount}</b> rejected</span><span><b>{reviewItems.length - approvedCount - rejectedCount}</b> pending</span></div>
               <label className="model-generation__upload"><input type="file" accept="image/jpeg,image/png,image/webp" capture="environment" multiple onChange={async (event) => {
-                setHumanError(null);
+                setReviewError(null);
                 try {
-                  const files = [...(event.target.files || [])].slice(0, 15 - humanImages.length);
-                  const prepared = await Promise.all(files.map((file, index) => prepareHumanEvidence(file, humanImages.length + index)));
-                  setHumanImages((current) => [...current, ...prepared].slice(0, 15));
-                } catch (error) { setHumanError(error.message); }
+                  const files = [...(event.target.files || [])].slice(0, 15);
+                  const prepared = await Promise.all(files.map((file, index) => prepareHumanEvidence(file, reviewItems.length + index)));
+                  setReviewItems((current) => {
+                    const available = Math.max(0, 30 - current.length);
+                    return [...current, ...prepared.slice(0, available).map((image) => ({ ...image, decision: 'pending' }))];
+                  });
+                } catch (error) { setReviewError(error.message); }
                 event.target.value = '';
-              }} /><ImageSquare /><span><strong>Take or upload exterior photos</strong><small>6 required · up to 15 · camera or computer</small></span></label>
-              {humanImages.length > 0 && <div className="model-generation__human-grid">{humanImages.map((image) => <div key={image.id}><img src={image.thumbnailUrl} alt={image.title} /><button type="button" onClick={() => setHumanImages((current) => current.filter((item) => item.id !== image.id))} aria-label={`Remove ${image.title}`}><X /></button><span>{image.title}</span></div>)}</div>}
-              {humanError && <p className="model-generation__human-error">{humanError}</p>}
-              <button className="model-generation__human-submit" type="button" disabled={humanImages.length < 6} onClick={() => onHumanEvidence(humanImages)}>Validate {humanImages.length} exterior views</button>
+              }} /><ImageSquare /><span><strong>Take or upload more evidence</strong><small>Exterior, aerial, or site-plan images · JPEG, PNG, WebP</small></span></label>
+              {reviewItems.length > 0 ? <div className="model-generation__review-grid">{reviewItems.map((image) => <article key={image.id} data-decision={image.decision}>
+                <div className="model-generation__review-image"><img src={image.thumbnailUrl} alt={image.description || image.title} />{image.sourceUrl && <a href={image.sourceUrl} target="_blank" rel="noreferrer">Open source</a>}</div>
+                <div className="model-generation__review-meta"><strong>{image.title}</strong><small>{image.dataUrl ? 'Human upload' : image.license || 'Open-source candidate'}</small></div>
+                <div className="model-generation__review-actions"><button type="button" className={image.decision === 'approved' ? 'is-approved' : ''} onClick={() => decide(image.id, 'approved')}><CheckCircle /> Approve</button><button type="button" className={image.decision === 'rejected' ? 'is-rejected' : ''} onClick={() => decide(image.id, 'rejected')}><X /> Reject</button></div>
+              </article>)}</div> : <div className="model-generation__waiting"><ImageSquare /><span>No open candidates were returned. Upload at least six identifiable exterior, aerial, or site-plan views.</span></div>}
+              {reviewError && <p className="model-generation__human-error">{reviewError}</p>}
+              <button className="model-generation__human-submit" type="button" disabled={approvedCount < 6} onClick={() => onEvidenceReview(reviewItems.filter((image) => image.decision === 'approved').slice(0, 15))}>Send {approvedCount} approved views to AI</button>
             </div> : assembling ? <div className="model-generation__assembly">
               <SimulationViewport model={previewModel} scenario={scenarioDefaults} progress={0} running={false} reducedMotion={reducedMotion} assemblyProgress={state.assemblyProgress} />
               <div className="model-generation__assembly-status"><span>{assemblyLabel}</span><strong>{Math.round(state.assemblyProgress * 100)}%</strong><i><b style={{ transform: `scaleX(${state.assemblyProgress})` }} /></i></div>
@@ -150,7 +191,7 @@ function ModelGenerationDialog({ state, asset, previewModel, reducedMotion, onCl
               <div><span>Roof</span><strong>{descriptor.roof.type}</strong></div>
               <div><span>Façade</span><strong>{descriptor.facade.material}</strong></div>
             </div>}
-            <div className="model-generation__source"><Database /><span>Footprint and tags: OpenStreetMap</span><ImageSquare /><span>{state.result ? `${state.result.viewCountUsed ?? state.images.length} views analyzed` : `${state.images.length} views retrieved`} · Wikimedia Commons</span><Scan /><span>Interpretation: {state.result?.model || 'server-side vision pending'}</span></div>
+            <div className="model-generation__source"><Database /><span>Footprint and tags: OpenStreetMap</span><ImageSquare /><span>{state.result ? `${state.result.viewCountUsed ?? state.images.length} views analyzed` : `${state.images.length} views retrieved`} · {evidenceBasis(state.images)}</span><Scan /><span>Interpretation: {state.result?.model || 'server-side vision pending'}</span></div>
           </>}
         </section>
       </div>
@@ -209,7 +250,7 @@ function InfrastructureImporter({ countries, country, setCountry, locationQuery,
         <div><dt>Operator</dt><dd>{selectedAsset.imported.operator || 'Data unavailable'}</dd></div>
         <div><dt>Address</dt><dd>{selectedAsset.imported.address || 'Data unavailable'}</dd></div>
       </dl>
-      {generatedModel?.assetId === selectedAsset.id && <div className="simulation-visual-record"><SourceBadge tone="assumption">Visual estimate</SourceBadge><p>{generatedModel.descriptor.summary}</p><span>{generatedModel.images?.length || 0} open image{generatedModel.images?.length === 1 ? '' : 's'} reviewed · {generatedModel.status === 'generated' ? generatedModel.model : 'mapped-source fallback'}</span></div>}
+      {generatedModel?.assetId === selectedAsset.id && <div className="simulation-visual-record"><SourceBadge tone="assumption">Visual estimate</SourceBadge><p>{generatedModel.descriptor.summary}</p><span>{evidenceBasis(generatedModel.images)} reviewed · {generatedModel.status === 'generated' ? generatedModel.model : 'mapped-source fallback'}</span></div>}
     </div>}
     {source && <div className="simulation-provenance">
       <SourceBadge>Imported</SourceBadge><span>{source.dataset}</span>
@@ -220,7 +261,7 @@ function InfrastructureImporter({ countries, country, setCountry, locationQuery,
   </div>;
 }
 
-function CustomBuilder({ values, setValues, footprint, setFootprint, selectedFace, setSelectedFace }) {
+function CustomBuilder({ values, setValues, footprint, selectedFace, setSelectedFace, modelerMode, setModelerMode, modelerSelection, onModelerSelect, onModelerAction, canUndo }) {
   const update = (event) => setValues((current) => ({ ...current, [event.target.name]: event.target.value }));
   const face = values.faceOverrides?.[selectedFace] || {};
   const updateFace = (key, value) => setValues((current) => ({
@@ -231,8 +272,12 @@ function CustomBuilder({ values, setValues, footprint, setFootprint, selectedFac
   const heightMismatch = Number.isFinite(floorStackHeight) && Math.abs(Number(values.height) - floorStackHeight) > .1;
   return <div className="simulation-config-stack">
     <Notice><div><strong>User-defined test geometry</strong><p>Every value in this mode is an assumption supplied for visualization. It is not imported asset data.</p></div></Notice>
+    <ModelerToolbar mode={modelerMode} setMode={setModelerMode} selection={modelerSelection ? { ...modelerSelection, vertexCount: footprint.length } : null} elementCount={footprint.length} onSelect={onModelerSelect} onAction={onModelerAction} canUndo={canUndo} />
     <Field label="Structure name"><input name="name" value={values.name} onChange={update} /></Field>
-    <FootprintEditor points={footprint} onChange={setFootprint} />
+    <div className="simulation-modeler-readout">
+      <div><span>3D TOPOLOGY</span><strong>{footprint.length} vertices · {footprint.length} edges</strong></div>
+      <p>Edit the structure directly in the viewport. Select vertices, edges, façades, or the roof; then drag the highlighted handle or use the precision actions.</p>
+    </div>
     <div className="simulation-field-pair">
       <Field label="Width"><div className="simulation-unit-input"><input name="width" type="number" min="1" value={values.width} onChange={update} /><span>m</span></div></Field>
       <Field label="Length"><div className="simulation-unit-input"><input name="length" type="number" min="1" value={values.length} onChange={update} /><span>m</span></div></Field>
@@ -265,6 +310,41 @@ function CustomBuilder({ values, setValues, footprint, setFootprint, selectedFac
   </div>;
 }
 
+function ModelerToolbar({ mode, setMode, selection, elementCount, onSelect, onAction, canUndo }) {
+  const selectedLabel = selection?.type === 'vertex' ? `Vertex ${selection.index + 1}`
+    : selection?.type === 'edge' ? `Edge ${selection.index + 1}`
+      : selection?.type === 'face' ? `${selection.faceId || 'Side'} face`
+        : selection?.type === 'roof' ? 'Roof plane' : 'Nothing selected';
+  return <div className="simulation-modeler" aria-label="Direct 3D modelling tools">
+    <div className="simulation-modeler__modes" role="toolbar" aria-label="Selection mode">
+      {['select', 'vertex', 'edge', 'face', 'roof'].map((item) => <button key={item} type="button" className={mode === item ? 'is-active' : ''} onClick={() => setMode(item)}>{item}</button>)}
+    </div>
+    {['vertex', 'edge', 'face'].includes(mode) && <div className="simulation-modeler__elements" aria-label={`Select ${mode}`}>
+      {Array.from({ length: elementCount }, (_, index) => <button key={index} type="button" className={selection?.type === mode && selection.index === index ? 'is-active' : ''} onClick={() => onSelect({ type: mode, index })}>{mode === 'vertex' ? 'V' : mode === 'edge' ? 'E' : 'F'}{index + 1}</button>)}
+    </div>}
+    {mode === 'roof' && <div className="simulation-modeler__elements"><button type="button" className={selection?.type === 'roof' ? 'is-active' : ''} onClick={() => onSelect({ type: 'roof', faceId: 'roof' })}>Roof plane</button></div>}
+    <div className="simulation-modeler__selection"><span>ACTIVE ELEMENT</span><strong>{selectedLabel}</strong><small>{mode === 'vertex' ? 'Drag the red point across the ground plane.' : mode === 'edge' || mode === 'face' ? 'Drag perpendicular to extend or intrude the footprint.' : mode === 'roof' ? 'Drag vertically to change the extrusion height.' : 'Choose an edit mode, then select geometry.'}</small></div>
+    <div className="simulation-modeler__actions">
+      {(selection?.type === 'edge' || selection?.type === 'face') && <>
+        <button type="button" onClick={() => onAction('pull-out')}>Pull out</button>
+        <button type="button" onClick={() => onAction('push-in')}>Push in</button>
+      </>}
+      {selection?.type === 'edge' && <>
+        <button type="button" onClick={() => onAction('insert-vertex')}><Plus /> Add vertex</button>
+        <button type="button" onClick={() => onAction('bend-out')}>Bend out</button>
+        <button type="button" onClick={() => onAction('bend-in')}>Bend in</button>
+      </>}
+      {selection?.type === 'vertex' && <button type="button" onClick={() => onAction('delete-vertex')} disabled={selection.vertexCount <= 3}>Delete vertex</button>}
+      {selection?.type === 'roof' && <>
+        <button type="button" onClick={() => onAction('raise')}>Raise</button>
+        <button type="button" onClick={() => onAction('lower')}>Lower</button>
+      </>}
+      <button type="button" onClick={() => onAction('undo')} disabled={!canUndo}><ArrowCounterClockwise /> Undo</button>
+      <button type="button" onClick={() => onAction('reset')}>Reset mesh</button>
+    </div>
+  </div>;
+}
+
 function HazardPanel({ scenario, setScenario }) {
   const update = (event) => setScenario((current) => ({ ...current, [event.target.name]: event.target.value }));
   return <div className="simulation-config-stack">
@@ -281,12 +361,31 @@ function HazardPanel({ scenario, setScenario }) {
     {scenario.type === 'wind' && <RangeField label="Wind speed" name="windSpeed" min="0" max="320" step="1" value={scenario.windSpeed} unit=" km/h" onChange={update} />}
     <RangeField label="Direction" name="direction" min="0" max="359" step="1" value={scenario.direction} unit="°" onChange={update} />
     <RangeField label="Duration" name="duration" min="5" max="120" step="1" value={scenario.duration} unit=" s" onChange={update} />
-    <Notice><div><strong>Scenario parameters are operator supplied</strong><p>No live hazard measurement is attached to this run. Visual response is illustrative and deterministic; it is not a finite-element, fluid-dynamics, or code-compliance result.</p></div></Notice>
+    <Notice><div><strong>Scenario parameters are operator supplied</strong><p>No live hazard measurement is attached to this run. Water motion and post-threshold falling use real-time simulation, while hydrodynamic loads, failure onset, deformation, crack growth, and debris remain visual heuristics—not CFD, finite-element, or code-compliance results.</p></div></Notice>
     <div className="simulation-layer-key">
-      <div><i className="is-stress" /><span><strong>Stress region</strong><small>Qualitative visualization layer</small></span></div>
-      <div><i className="is-crack" /><span><strong>Crack path</strong><small>Illustrative initiation/propagation</small></span></div>
+      <div><i className="is-stress" /><span><strong>Geometry sensitivity</strong><small>Corner, support, and façade-discontinuity heuristic</small></span></div>
+      <div><i className="is-crack" /><span><strong>Illustrative crack onset</strong><small>Anchored to mapped/modelled surfaces; no fracture solver</small></span></div>
       <div><i className="is-hazard" /><span><strong>Hazard field</strong><small>Driven by entered scenario values</small></span></div>
+      <div><i className="is-failure" /><span><strong>Rigid-body failure</strong><small>Physics takes over only after the assumed extreme-load threshold</small></span></div>
     </div>
+  </div>;
+}
+
+function ComparisonPanel({ enabled, onToggle, model, values, setValues, cameraLinked, setCameraLinked, differences, onSave, saveState, saved }) {
+  const update = (event) => setValues((current) => ({ ...current, [event.target.name]: event.target.value }));
+  return <div className="simulation-config-stack comparison-config">
+    <Notice type="info"><div><strong>Same building. Same disaster. Two designs.</strong><p>Design B begins as a duplicate of Design A. Both viewports share the exact hazard parameters and simulation clock. Only the listed design parameters differ.</p></div></Notice>
+    <button className={`simulation-primary-button ${enabled ? 'is-active' : ''}`} type="button" onClick={onToggle} disabled={!model}>{enabled ? 'Return to single simulation' : 'Duplicate as Design B'}</button>
+    {enabled && <>
+      <div className="simulation-field-pair"><Field label="Design B height"><div className="simulation-unit-input"><input name="height" type="number" min="1" max="300" step=".1" value={values.height} onChange={update} /><span>m</span></div></Field><Field label="Design B floors"><input name="floors" type="number" min="1" max="120" value={values.floors} onChange={update} /></Field></div>
+      <Field label="Design B roof"><select name="roof" value={values.roof} onChange={update}><option value="flat">Flat</option><option value="gable">Gable</option><option value="hip">Hip</option><option value="dome">Dome</option><option value="vaulted">Vaulted</option><option value="sawtooth">Sawtooth</option></select></Field>
+      <Field label="Design B display material"><select name="material" value={values.material} onChange={update}><option value="reinforced concrete">Reinforced concrete</option><option value="structural steel">Structural steel</option><option value="masonry">Masonry</option><option value="timber">Timber</option><option value="mixed">Mixed</option></select><small>Display assumption only unless supplied by the imported record.</small></Field>
+      <label className="comparison-camera-toggle"><input type="checkbox" checked={cameraLinked} onChange={(event) => setCameraLinked(event.target.checked)} /><span><strong>Synchronized cameras</strong><small>Orbit, pan, and zoom either viewport to move both. Disable for independent inspection.</small></span></label>
+      <section className="comparison-differences"><span>PARAMETER DIFFERENCES</span>{differences.length ? differences.map((item) => <div key={item.label}><b>{item.label}</b><span>{item.a}</span><i>to</i><strong>{item.b}</strong></div>) : <p>Design B currently matches Design A.</p>}</section>
+      <form className="comparison-save" onSubmit={onSave}><Field label="Comparison name"><input name="name" required maxLength="180" placeholder="Scenario comparison name" /></Field><button className="simulation-primary-button" type="submit" disabled={saveState.busy}>{saveState.busy ? <SpinnerGap className="spin" /> : <Database />} Save comparison</button>{saveState.error && <p className="simulation-inline-error">{saveState.error}</p>}{saveState.success && <p className="simulation-inline-success">{saveState.success}</p>}</form>
+      {saved.length > 0 && <div className="comparison-saved"><span>SAVED COMPARISONS</span>{saved.slice(0, 6).map((item) => <article key={item.id}><strong>{item.name}</strong><small>{time(item.createdAt)} · {item.disclaimer}</small></article>)}</div>}
+    </>}
+    <Notice><div><strong>Observable outputs only</strong><p>The comparison synchronizes deformation, affected geometry, flooding, wind, cracks, debris, and other existing visual layers. It does not produce safety, compliance, collapse-probability, or structural-soundness conclusions.</p></div></Notice>
   </div>;
 }
 
@@ -352,19 +451,29 @@ export default function InfrastructureLab({ entry = 'simulation' }) {
   const [assetState, setAssetState] = useState({ loading: false, error: null, retrievedAt: null, datasetUpdatedAt: null, source: null });
   const [selectedAsset, setSelectedAsset] = useState(null);
   const [generatedModel, setGeneratedModel] = useState(null);
-  const [generation, setGeneration] = useState({ open: false, stage: 'locate', images: [], result: null, error: null, assemblyProgress: 0 });
+  const [generation, setGeneration] = useState({ open: false, stage: 'locate', images: [], result: null, error: null, awaitingReview: false, reviewKey: null, evidenceToken: null, evidenceSource: null, assemblyProgress: 0 });
   const [reloadKey, setReloadKey] = useState(0);
   const [sourceMode, setSourceMode] = useState('imported');
   const [custom, setCustom] = useState(customDefaults);
   const [selectedFace, setSelectedFace] = useState('south');
   const [footprint, setFootprint] = useState(initialFootprint);
+  const [modelerMode, setModelerMode] = useState('select');
+  const [modelerSelection, setModelerSelection] = useState(null);
+  const [geometryHistory, setGeometryHistory] = useState([]);
   const [panel, setPanel] = useState('asset');
   const [panelOpen, setPanelOpen] = useState(true);
   const [scenario, setScenario] = useState(scenarioDefaults);
   const [progress, setProgress] = useState(0);
   const [playing, setPlaying] = useState(false);
+  const [comparisonMode, setComparisonMode] = useState(false);
+  const [designB, setDesignB] = useState({ height: 15, floors: 5, roof: 'flat', material: 'reinforced concrete' });
+  const [cameraLinked, setCameraLinked] = useState(true);
+  const [sharedCamera, setSharedCamera] = useState(null);
+  const [comparisonSave, setComparisonSave] = useState({ busy: false, error: null, success: null });
   const previousTime = useRef(null);
   const generationController = useRef(null);
+  const reviewSubmitting = useRef(false);
+  const geometryDragActive = useRef(false);
   const reducedMotion = useMemo(() => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false, []);
 
   useEffect(() => {
@@ -404,15 +513,89 @@ export default function InfrastructureLab({ entry = 'simulation' }) {
 
   useEffect(() => () => generationController.current?.abort(), []);
 
-  const assembleGeneratedResult = async ({ result, mappedAsset, candidateImages, evidenceSource, evidenceToken, controller }) => {
-    const acceptedIds = new Set(result.acceptedImageIds || []);
-    const verifiedImages = acceptedIds.size ? candidateImages.filter((image) => acceptedIds.has(image.id)) : result.acceptedImages || [];
-    if (result.status === 'needs-human-evidence') {
-      setGeneration((current) => ({ ...current, stage: 'analysis', awaitingHuman: true, result, images: verifiedImages, evidenceToken, assemblyProgress: 0 }));
+  const geometrySnapshot = () => ({ footprint: footprint.map((point) => ({ ...point })), height: Number(custom.height) || 15 });
+  const rememberGeometry = () => setGeometryHistory((current) => [...current.slice(-23), geometrySnapshot()]);
+  const beginGeometryEdit = () => {
+    if (geometryDragActive.current) return;
+    geometryDragActive.current = true;
+    rememberGeometry();
+  };
+  const endGeometryEdit = () => { geometryDragActive.current = false; };
+  const updateGeometryFromViewport = ({ footprint: nextFootprint, height }) => {
+    if (Array.isArray(nextFootprint) && nextFootprint.length >= 3) setFootprint(nextFootprint.map(clampPoint));
+    if (Number.isFinite(height)) setCustom((current) => ({ ...current, height: Math.round(clamp(height, 1, 180) * 10) / 10 }));
+  };
+  const applyModelerAction = (action) => {
+    if (action === 'undo') {
+      setGeometryHistory((current) => {
+        const previous = current.at(-1);
+        if (!previous) return current;
+        setFootprint(previous.footprint.map((point) => ({ ...point })));
+        setCustom((value) => ({ ...value, height: previous.height }));
+        setModelerSelection(null);
+        return current.slice(0, -1);
+      });
       return;
     }
-    setGeneration((current) => ({ ...current, stage: 'geometry', awaitingHuman: false, result, images: verifiedImages, evidenceToken, assemblyProgress: 0 }));
-    const ready = { ...result, assetId: mappedAsset.id, images: verifiedImages, evidenceSource };
+    if (action === 'reset') {
+      rememberGeometry();
+      setFootprint(initialFootprint.map((point) => ({ ...point })));
+      setCustom((current) => ({ ...current, height: customDefaults.height }));
+      setModelerSelection(null);
+      return;
+    }
+    if (!modelerSelection) return;
+    if (['raise', 'lower'].includes(action) && modelerSelection.type === 'roof') {
+      rememberGeometry();
+      setCustom((current) => ({ ...current, height: clamp(Number(current.height) + (action === 'raise' ? 1 : -1), 1, 180) }));
+      return;
+    }
+    const edgeIndex = modelerSelection.index;
+    if ((modelerSelection.type === 'edge' || modelerSelection.type === 'face') && Number.isInteger(edgeIndex)) {
+      const normal = edgeNormal(footprint, edgeIndex);
+      if (['pull-out', 'push-in'].includes(action)) {
+        rememberGeometry();
+        const amount = action === 'pull-out' ? .035 : -.035;
+        setFootprint((current) => current.map((point, index) => (index === edgeIndex || index === (edgeIndex + 1) % current.length) ? clampPoint({ x: point.x + normal.x * amount, y: point.y + normal.y * amount }) : point));
+        return;
+      }
+      if (modelerSelection.type === 'edge' && ['insert-vertex', 'bend-out', 'bend-in'].includes(action) && footprint.length < 24) {
+        rememberGeometry();
+        const start = footprint[edgeIndex];
+        const end = footprint[(edgeIndex + 1) % footprint.length];
+        const amount = action === 'bend-out' ? .055 : action === 'bend-in' ? -.055 : 0;
+        const vertex = clampPoint({ x: (start.x + end.x) / 2 + normal.x * amount, y: (start.y + end.y) / 2 + normal.y * amount });
+        const next = [...footprint];
+        next.splice(edgeIndex + 1, 0, vertex);
+        setFootprint(next);
+        setModelerMode('vertex');
+        setModelerSelection({ type: 'vertex', index: edgeIndex + 1 });
+        return;
+      }
+    }
+    if (action === 'delete-vertex' && modelerSelection.type === 'vertex' && footprint.length > 3) {
+      rememberGeometry();
+      setFootprint((current) => current.filter((_, index) => index !== modelerSelection.index));
+      setModelerSelection(null);
+    }
+  };
+
+  const assembleGeneratedResult = async ({ result, mappedAsset, candidateImages, evidenceSource, evidenceToken, controller }) => {
+    const completedResult = result.status === 'needs-human-evidence'
+      ? {
+        ...result,
+        status: 'source-only',
+        message: result.message || 'AI retained too little visual evidence for a grounded reconstruction. Mapped geometry remains the model basis.',
+      }
+      : result;
+    const acceptedIds = new Set(completedResult.acceptedImageIds || []);
+    const candidateById = new Map(candidateImages.map((image) => [String(image.id), image]));
+    const serverById = new Map((completedResult.acceptedImages || []).map((image) => [String(image.id), image]));
+    const verifiedImages = acceptedIds.size
+      ? [...acceptedIds].map((id) => candidateById.get(String(id)) || serverById.get(String(id))).filter(Boolean)
+      : completedResult.acceptedImages || [];
+    setGeneration((current) => ({ ...current, stage: 'geometry', awaitingReview: false, result: completedResult, images: verifiedImages, evidenceToken, assemblyProgress: 0 }));
+    const ready = { ...completedResult, assetId: mappedAsset.id, images: verifiedImages, evidenceSource };
     setGeneratedModel(ready);
     await new Promise((resolve) => {
       if (reducedMotion) { setGeneration((current) => ({ ...current, assemblyProgress: 1 })); resolve(); return; }
@@ -427,18 +610,19 @@ export default function InfrastructureLab({ entry = 'simulation' }) {
       };
       window.requestAnimationFrame(assemble);
     });
-    if (!controller.signal.aborted) setGeneration((current) => ({ ...current, stage: 'complete', result, assemblyProgress: 1 }));
+    if (!controller.signal.aborted) setGeneration((current) => ({ ...current, stage: 'complete', result: completedResult, awaitingReview: false, assemblyProgress: 1 }));
   };
 
   const selectAsset = async (asset) => {
     generationController.current?.abort();
+    reviewSubmitting.current = false;
     const controller = new AbortController();
     generationController.current = controller;
     setSelectedAsset(asset);
     setGeneratedModel(null);
     setPlaying(false);
     setProgress(0);
-    setGeneration({ open: true, stage: 'locate', images: [], result: null, error: null, awaitingHuman: false, evidenceToken: null, evidenceSource: null, assemblyProgress: 0 });
+    setGeneration({ open: true, stage: 'locate', images: [], result: null, error: null, awaitingReview: false, reviewKey: null, evidenceToken: null, evidenceSource: null, assemblyProgress: 0 });
     try {
       await new Promise((resolve) => window.setTimeout(resolve, reducedMotion ? 0 : 220));
       if (controller.signal.aborted) return;
@@ -450,35 +634,43 @@ export default function InfrastructureLab({ entry = 'simulation' }) {
       if (!evidenceResponse.ok) throw new Error(evidence.error || 'Open location imagery could not be retrieved.');
       const mappedAsset = evidence.mappedAsset ? { ...asset, ...evidence.mappedAsset, source: asset.source } : asset;
       setSelectedAsset(mappedAsset);
-      setGeneration((current) => ({ ...current, stage: 'analysis', images: [], evidenceToken: evidence.token, evidenceSource: evidence.source }));
-      const modelResponse = await fetch('/api/simulation/model-generate', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ asset: mappedAsset, evidenceToken: evidence.token }), signal: controller.signal,
-      });
-      const result = await modelResponse.json();
-      if (!modelResponse.ok) throw new Error(result.error || 'The visual model service could not complete the structure analysis.');
-      await assembleGeneratedResult({ result, mappedAsset, candidateImages: evidence.images || [], evidenceSource: evidence.source, evidenceToken: evidence.token, controller });
+      setGeneration((current) => ({
+        ...current,
+        stage: 'review',
+        awaitingReview: true,
+        images: evidence.images || [],
+        evidenceToken: evidence.token,
+        evidenceSource: evidence.source,
+        result: null,
+        reviewKey: evidence.token || `review-${Date.now()}`,
+      }));
     } catch (error) {
       if (error.name !== 'AbortError') setGeneration((current) => ({ ...current, error: error.message || 'Model generation failed.' }));
     }
   };
 
-  const submitHumanEvidence = async (images) => {
-    if (!selectedAsset || images.length < 6) return;
+  const submitEvidenceReview = async (images) => {
+    if (!selectedAsset || images.length < 6 || reviewSubmitting.current) return;
+    reviewSubmitting.current = true;
     generationController.current?.abort();
     const controller = new AbortController();
     generationController.current = controller;
     setGeneratedModel(null);
-    setGeneration((current) => ({ ...current, stage: 'analysis', awaitingHuman: false, images: [], result: null, error: null, assemblyProgress: 0 }));
+    const approvedImageIds = images.filter((image) => !image.dataUrl).map((image) => image.id);
+    const humanImages = images.filter((image) => image.dataUrl).map(({ name, title, dataUrl }) => ({ name: name || title, dataUrl }));
+    setGeneration((current) => ({ ...current, stage: 'analysis', awaitingReview: false, images, result: null, error: null, assemblyProgress: 0 }));
     try {
       const response = await fetch('/api/simulation/model-generate', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: controller.signal,
-        body: JSON.stringify({ asset: selectedAsset, evidenceToken: generation.evidenceToken, humanImages: images.map(({ name, dataUrl }) => ({ name, dataUrl })) }),
+        body: JSON.stringify({ asset: selectedAsset, evidenceToken: generation.evidenceToken, approvedImageIds, humanImages }),
       });
       const result = await response.json();
-      if (!response.ok) throw new Error(result.error || 'The uploaded exterior evidence could not be analyzed.');
-      await assembleGeneratedResult({ result, mappedAsset: selectedAsset, candidateImages: images, evidenceSource: { provider: 'Human-supplied exterior evidence' }, evidenceToken: generation.evidenceToken, controller });
+      if (!response.ok) throw new Error(result.error || 'The approved visual evidence could not be analyzed.');
+      await assembleGeneratedResult({ result, mappedAsset: selectedAsset, candidateImages: images, evidenceSource: generation.evidenceSource || { provider: 'Human-reviewed visual evidence' }, evidenceToken: generation.evidenceToken, controller });
     } catch (error) {
-      if (error.name !== 'AbortError') setGeneration((current) => ({ ...current, error: error.message || 'Uploaded evidence analysis failed.' }));
+      if (error.name !== 'AbortError') setGeneration((current) => ({ ...current, error: error.message || 'Approved evidence analysis failed.' }));
+    } finally {
+      if (generationController.current === controller) reviewSubmitting.current = false;
     }
   };
 
@@ -535,15 +727,74 @@ export default function InfrastructureLab({ entry = 'simulation' }) {
     };
   }, [sourceMode, selectedAsset, generatedModel, custom, footprint]);
 
+  useEffect(() => {
+    if (!model) { setComparisonMode(false); return; }
+    setDesignB({ height: Number(model.height) || 12, floors: Number(model.floors) || 1, roof: model.roof || 'flat', material: model.material || 'mixed' });
+    setSharedCamera(null);
+  }, [model?.name, model?.kind, selectedAsset?.id]);
+
+  const comparisonModel = useMemo(() => model && comparisonMode ? {
+    ...model,
+    name: `${model.name || 'Structure'} · Design B`,
+    height: clamp(Number(designB.height) || Number(model.height) || 12, 1, 300),
+    floors: clamp(Math.round(Number(designB.floors) || Number(model.floors) || 1), 1, 120),
+    roof: designB.roof,
+    material: designB.material,
+    visualAssumptions: [...new Set([...(model.visualAssumptions || []), 'Design B parameters entered for visual comparison'])],
+  } : null, [model, comparisonMode, designB]);
+  const comparisonDifferences = useMemo(() => {
+    if (!model || !comparisonModel) return [];
+    return [
+      { label: 'Height', a: `${Number(model.height).toFixed(1)} m`, b: `${Number(comparisonModel.height).toFixed(1)} m`, changed: Number(model.height) !== Number(comparisonModel.height) },
+      { label: 'Floors', a: String(model.floors || 1), b: String(comparisonModel.floors || 1), changed: Number(model.floors || 1) !== Number(comparisonModel.floors || 1) },
+      { label: 'Roof', a: model.roof || 'unavailable', b: comparisonModel.roof || 'unavailable', changed: model.roof !== comparisonModel.roof },
+      { label: 'Material display', a: model.material || 'unavailable', b: comparisonModel.material || 'unavailable', changed: model.material !== comparisonModel.material },
+    ].filter((item) => item.changed);
+  }, [model, comparisonModel]);
+
   const phase = progress === 0 ? 'before' : progress >= 1 ? 'after' : 'during';
   const displayedSeconds = Math.round(Number(scenario.duration) * progress * 10) / 10;
   const run = () => { setProgress(0); requestAnimationFrame(() => setPlaying(true)); };
   const reset = () => { setPlaying(false); setProgress(0); };
+  const toggleComparison = () => {
+    if (!model) return;
+    if (!comparisonMode) {
+      setDesignB({ height: Number(model.height) || 12, floors: Number(model.floors) || 1, roof: model.roof || 'flat', material: model.material || 'mixed' });
+      setSharedCamera(null);
+    }
+    setComparisonMode((current) => !current);
+    setProgress(0);
+    setPlaying(false);
+    setPanel('comparison');
+  };
+  const saveComparison = async (event) => {
+    event.preventDefault();
+    if (!model || !comparisonModel) return;
+    setComparisonSave({ busy: true, error: null, success: null });
+    const summary = (value) => ({
+      name: value.name || 'Structure', kind: value.kind, category: value.category || 'building',
+      height: Number(value.height) || null, floors: Number(value.floors) || null, roof: value.roof || null,
+      material: value.material || null, footprint: Array.isArray(value.footprint) ? value.footprint.slice(0, 64) : [],
+      visualAssumptions: value.visualAssumptions || [],
+    });
+    try {
+      await mutate('comparison-save', {
+        name: new FormData(event.currentTarget).get('name'), buildingId: selectedAsset?.id || null,
+        disaster: { ...scenario }, designA: summary(model), designB: summary(comparisonModel),
+      });
+      event.currentTarget.reset();
+      setComparisonSave({ busy: false, error: null, success: 'Comparison saved to the active operational context.' });
+    } catch (error) { setComparisonSave({ busy: false, error: error.message, success: null }); }
+  };
+  const selectModelElement = (selection) => {
+    setModelerSelection(selection);
+    if (selection?.faceId) setSelectedFace(selection.faceId);
+  };
 
-  return <section className={`simulation-lab ${panelOpen ? 'has-panel' : 'is-panel-closed'}`}>
+  return <section className={`simulation-lab ${panelOpen ? 'has-panel' : 'is-panel-closed'} ${comparisonMode ? 'is-comparing' : ''}`}>
     <header className="simulation-lab__header">
       <div><span>NAVIRA / {entry === 'infrastructure' ? 'INFRASTRUCTURE LAB' : 'SIMULATION LAB'}</span><h1>Test infrastructure against a controlled hazard scenario.</h1></div>
-      <div className="simulation-lab__truth"><SourceBadge tone={sourceMode === 'imported' ? 'source' : 'assumption'}>{sourceMode === 'imported' ? 'Imported asset' : 'Built model'}</SourceBadge><p>Visualization only. No structural safety or collapse determination.</p></div>
+      <div className="simulation-lab__truth"><SourceBadge tone={sourceMode === 'imported' ? 'source' : 'assumption'}>{sourceMode === 'imported' ? 'Imported asset' : 'Built model'}</SourceBadge><p>Visualization only. No structural safety or collapse determination.</p>{model && <button type="button" onClick={toggleComparison}>{comparisonMode ? 'Single simulation' : 'Compare Design A / B'}</button>}</div>
     </header>
 
     <div className="simulation-lab__workspace">
@@ -553,13 +804,21 @@ export default function InfrastructureLab({ entry = 'simulation' }) {
           <div className="simulation-phase" data-phase={phase}><i />{phase}</div>
           {!panelOpen && <button className="simulation-panel-open" type="button" onClick={() => setPanelOpen(true)}><SidebarSimple /> Configure</button>}
         </div>
-        <div className="simulation-viewport__stage">
-          <SimulationViewport model={model} scenario={scenario} progress={progress} running={playing} reducedMotion={reducedMotion} editable={sourceMode === 'custom'} selectedFace={selectedFace} onFaceSelect={setSelectedFace} />
+        <div className={`simulation-viewport__stage ${comparisonMode ? 'simulation-viewport__stage--comparison' : ''}`}>
+          <div className="comparison-viewport comparison-viewport--a">{comparisonMode && <div className="comparison-viewport__label"><span>DESIGN A</span><strong>{model?.name || 'Source design'}</strong></div>}<SimulationViewport
+            model={model} scenario={scenario} progress={progress} running={playing} reducedMotion={reducedMotion}
+            editable={sourceMode === 'custom' && progress === 0} selectedFace={selectedFace} onFaceSelect={setSelectedFace}
+            modelerMode={modelerMode} selectedElement={modelerSelection} onElementSelect={selectModelElement}
+            onGeometryEditStart={beginGeometryEdit} onGeometryEditEnd={endGeometryEdit} onGeometryChange={updateGeometryFromViewport}
+            cameraState={cameraLinked ? sharedCamera : null} onCameraChange={cameraLinked ? setSharedCamera : undefined} viewportId="design-a"
+          /></div>
+          {comparisonMode && <div className="comparison-viewport comparison-viewport--b"><div className="comparison-viewport__label"><span>DESIGN B</span><strong>{comparisonDifferences.length} changed parameter{comparisonDifferences.length === 1 ? '' : 's'}</strong></div><SimulationViewport model={comparisonModel} scenario={scenario} progress={progress} running={playing} reducedMotion={reducedMotion} cameraState={cameraLinked ? sharedCamera : null} onCameraChange={cameraLinked ? setSharedCamera : undefined} viewportId="design-b" /></div>}
           {!model && <div className="simulation-viewport__empty"><Cube /><strong>Select or build infrastructure</strong><p>The viewport will remain empty until a sourced feature or valid custom footprint is available.</p></div>}
           <div className="simulation-viewport__telemetry">
             <div><span>Hazard</span><strong>{scenario.type === 'wind' ? 'Extreme wind' : scenario.type}</strong></div>
             <div><span>Simulation time</span><strong>{displayedSeconds.toFixed(1)} s</strong></div>
-            <div><span>Solver</span><strong>Visual heuristic</strong></div>
+            <div><span>Response model</span><strong>{scenario.type === 'flood' ? 'Surge + rigid impact' : scenario.type === 'earthquake' ? 'Ground motion + rigid failure' : 'Gust + rigid failure'}</strong></div>
+            {comparisonMode && <div><span>Camera</span><strong>{cameraLinked ? 'Synchronized A / B' : 'Independent inspection'}</strong></div>}
           </div>
           {model?.visualAssumptions?.length > 0 && <div className="simulation-viewport__assumption"><Warning /> Display assumptions: {model.visualAssumptions.join(', ')}</div>}
         </div>
@@ -570,15 +829,16 @@ export default function InfrastructureLab({ entry = 'simulation' }) {
             <div><span>Before</span><span>During</span><span>After</span></div>
             <input aria-label="Simulation timeline" type="range" min="0" max="1" step=".001" value={progress} onChange={(event) => { setPlaying(false); setProgress(Number(event.target.value)); }} disabled={!model} />
           </div>
-          <button className="simulation-run" type="button" onClick={run} disabled={!model}><Flask /> Run simulation</button>
+          <button className="simulation-run" type="button" onClick={run} disabled={!model}><Flask /> {comparisonMode ? 'Run both designs' : 'Run simulation'}</button>
         </div>
       </main>
 
       {panelOpen && <aside className="simulation-panel">
-        <div className="simulation-panel__head"><div><span>CONFIGURATION</span><strong>{panel === 'asset' ? 'Infrastructure' : panel === 'hazard' ? 'Hazard scenario' : 'Accountable records'}</strong></div><button type="button" aria-label="Close configuration panel" onClick={() => setPanelOpen(false)}><X /></button></div>
+        <div className="simulation-panel__head"><div><span>CONFIGURATION</span><strong>{panel === 'asset' ? 'Infrastructure' : panel === 'hazard' ? 'Hazard scenario' : panel === 'comparison' ? 'Scenario comparison' : 'Accountable records'}</strong></div><button type="button" aria-label="Close configuration panel" onClick={() => setPanelOpen(false)}><X /></button></div>
         <nav className="simulation-panel__tabs" aria-label="Lab configuration">
           <button type="button" className={panel === 'asset' ? 'is-active' : ''} onClick={() => setPanel('asset')}><Buildings /> Asset</button>
           <button type="button" className={panel === 'hazard' ? 'is-active' : ''} onClick={() => setPanel('hazard')}><Warning /> Hazard</button>
+          <button type="button" className={panel === 'comparison' ? 'is-active' : ''} onClick={() => setPanel('comparison')}><Cube /> Compare</button>
           <button type="button" className={panel === 'records' ? 'is-active' : ''} onClick={() => setPanel('records')}><Database /> Records</button>
         </nav>
         <div className="simulation-panel__body">
@@ -586,20 +846,21 @@ export default function InfrastructureLab({ entry = 'simulation' }) {
             <div className="simulation-mode-switch"><button type="button" className={sourceMode === 'imported' ? 'is-active' : ''} onClick={() => setSourceMode('imported')}>Real infrastructure</button><button type="button" className={sourceMode === 'custom' ? 'is-active' : ''} onClick={() => setSourceMode('custom')}>Build your own</button></div>
             {sourceMode === 'imported'
               ? <InfrastructureImporter {...{ countries, country, setCountry, locationQuery, setLocationQuery, onLocationSearch: () => setAppliedLocationQuery(locationQuery.trim()), category, setCategory, assets, selectedAsset, selectAsset, loading: assetState.loading, error: assetState.error, onRetry: () => setReloadKey((value) => value + 1), retrievedAt: assetState.retrievedAt, datasetUpdatedAt: assetState.datasetUpdatedAt, source: assetState.source, generatedModel }} />
-              : <CustomBuilder values={custom} setValues={setCustom} footprint={footprint} setFootprint={setFootprint} selectedFace={selectedFace} setSelectedFace={setSelectedFace} />}
+              : <CustomBuilder values={custom} setValues={setCustom} footprint={footprint} selectedFace={selectedFace} setSelectedFace={setSelectedFace} modelerMode={modelerMode} setModelerMode={setModelerMode} modelerSelection={modelerSelection} onModelerSelect={selectModelElement} onModelerAction={applyModelerAction} canUndo={geometryHistory.length > 0} />}
           </>}
           {panel === 'hazard' && <HazardPanel scenario={scenario} setScenario={setScenario} />}
+          {panel === 'comparison' && <ComparisonPanel enabled={comparisonMode} onToggle={toggleComparison} model={model} values={designB} setValues={setDesignB} cameraLinked={cameraLinked} setCameraLinked={setCameraLinked} differences={comparisonDifferences} onSave={saveComparison} saveState={comparisonSave} saved={data.comparisonScenarios || []} />}
           {panel === 'records' && <RecordsPanel data={data} mutate={mutate} />}
         </div>
       </aside>}
     </div>
 
     <footer className="simulation-lab__evidence">
-      <div><span>MODEL BASIS</span><strong>{sourceMode === 'imported' ? selectedAsset ? generatedModel ? `${selectedAsset.source.dataset} + ${generatedModel.images.length} open images` : 'Awaiting visual reconstruction' : 'Data unavailable' : 'Operator-defined geometry'}</strong></div>
+      <div><span>MODEL BASIS</span><strong>{sourceMode === 'imported' ? selectedAsset ? generatedModel ? `${selectedAsset.source.dataset} + ${evidenceBasis(generatedModel.images)}` : 'Awaiting visual reconstruction' : 'Data unavailable' : 'Operator-defined geometry'}</strong></div>
       <div><span>ENGINEERING PROPERTIES</span><strong>{sourceMode === 'imported' ? 'Unavailable unless present in source tags' : 'User-entered assumptions'}</strong></div>
       <div><span>OUTPUT STATUS</span><strong>Simulated visualization · no safety verdict</strong></div>
       <div><span>EXTENSION POINTS</span><strong>Dataset adapters · solver adapters · result layers</strong></div>
     </footer>
-    <ModelGenerationDialog state={generation} asset={selectedAsset} previewModel={model} reducedMotion={reducedMotion} onClose={() => setGeneration((current) => ({ ...current, open: false }))} onRetry={selectAsset} onHumanEvidence={submitHumanEvidence} />
+    <ModelGenerationDialog state={generation} asset={selectedAsset} previewModel={model} reducedMotion={reducedMotion} onClose={() => setGeneration((current) => ({ ...current, open: false }))} onRetry={selectAsset} onEvidenceReview={submitEvidenceReview} />
   </section>;
 }

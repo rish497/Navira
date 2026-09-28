@@ -1,43 +1,55 @@
-import { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
-const STORAGE_KEY = 'navira-session-v1';
 const AuthContext = createContext(null);
 
-function readSession() {
-  try {
-    const value = JSON.parse(window.localStorage.getItem(STORAGE_KEY));
-    return value?.id && value?.role ? value : null;
-  } catch {
-    return null;
-  }
+async function authRequest(path, payload) {
+  const response = await fetch(`/api/auth/${path}`, {
+    method: payload ? 'POST' : 'GET',
+    credentials: 'same-origin',
+    headers: payload ? { 'Content-Type': 'application/json' } : undefined,
+    body: payload ? JSON.stringify(payload) : undefined,
+    cache: 'no-store',
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(result.error || `Authentication failed (${response.status})`);
+  return result;
 }
 
 export function AuthProvider({ children }) {
-  const [profile, setProfile] = useState(readSession);
+  const [profile, setProfile] = useState(undefined);
 
-  const signIn = useCallback(({ name, email, role, organization }) => {
-    const normalizedRole = role === 'operator' ? 'operator' : 'civilian';
-    const next = {
-      id: profile?.email === email.trim().toLowerCase() && profile?.role === normalizedRole
-        ? profile.id
-        : window.crypto.randomUUID(),
-      name: name.trim(),
-      email: email.trim().toLowerCase(),
-      role: normalizedRole,
-      organization: normalizedRole === 'operator' ? organization.trim() : null,
-      signedInAt: new Date().toISOString(),
-    };
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-    setProfile(next);
-    return next;
-  }, [profile]);
-
-  const signOut = useCallback(() => {
-    window.localStorage.removeItem(STORAGE_KEY);
-    setProfile(null);
+  useEffect(() => {
+    let active = true;
+    authRequest('session').then((result) => {
+      if (active) setProfile(result.profile || null);
+    }).catch(() => {
+      if (active) setProfile(null);
+    });
+    return () => { active = false; };
   }, []);
 
-  const value = useMemo(() => ({ profile, signIn, signOut }), [profile, signIn, signOut]);
+  const signIn = useCallback(async ({ email, password, role }) => {
+    const result = await authRequest('login', { email, password, role });
+    setProfile(result.profile);
+    return result.profile;
+  }, []);
+
+  const register = useCallback(async (values) => {
+    const result = await authRequest('register', values);
+    setProfile(result.profile);
+    return result.profile;
+  }, []);
+
+  const signOut = useCallback(async () => {
+    try {
+      await authRequest('logout', {});
+    } finally {
+      setProfile(null);
+    }
+  }, []);
+
+  const ready = profile !== undefined;
+  const value = useMemo(() => ({ profile, ready, signIn, register, signOut }), [profile, ready, signIn, register, signOut]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
@@ -47,13 +59,6 @@ export function useAuth() {
   return value;
 }
 
-export function actorHeaders(profile, extra = {}) {
-  return {
-    'Content-Type': 'application/json',
-    'X-Navira-User': profile?.id || '',
-    'X-Navira-Role': profile?.role || '',
-    'X-Navira-Name': encodeURIComponent(profile?.name || ''),
-    'X-Navira-Organization': encodeURIComponent(profile?.organization || ''),
-    ...extra,
-  };
+export function actorHeaders(_profile, extra = {}) {
+  return { 'Content-Type': 'application/json', ...extra };
 }

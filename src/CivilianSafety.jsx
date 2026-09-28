@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -21,6 +21,8 @@ import LiveMap from './LiveMap';
 import { useLiveData } from './liveData';
 import { useAuth } from './auth';
 import { useOperations } from './operationsData';
+import { useRoadData } from './roadData';
+import { useAlertData } from './alertData';
 import {
   analyzeRoutes,
   assessVerifiedArea,
@@ -28,6 +30,7 @@ import {
   formatDistance,
   formatDuration,
   formatRouteDistance,
+  roadRestrictionHits,
 } from './geo';
 
 const EMPTY_BOUNDARY = { state: 'idle', eventId: null, collection: null, fetchedAt: null };
@@ -127,7 +130,7 @@ function routeInstruction(step) {
   return `Continue${step.modifier ? ` ${step.modifier}` : ''}${road ? ` on${road}` : ''}`;
 }
 
-function RouteGuidance({ route, location, active, onStart, onStop, onLocation }) {
+function RouteGuidance({ route, location, active, onStart, onStop, onLocation, navigationState }) {
   const [stepIndex, setStepIndex] = useState(0);
   const [gpsError, setGpsError] = useState(null);
   const steps = route?.steps || [];
@@ -153,7 +156,7 @@ function RouteGuidance({ route, location, active, onStart, onStop, onLocation })
 
   useEffect(() => { setStepIndex(0); }, [route?.id]);
   if (!route) return null;
-  return <section className={`route-guidance ${active ? 'is-active' : ''}`} aria-live="polite"><div className="route-guidance__turn"><NavigationArrow weight="fill" /><div><span>{active ? Number.isFinite(distanceKm) ? `${formatDistance(distanceKm)} to next instruction` : 'Waiting for GPS' : 'LIVE ROAD GUIDANCE'}</span><strong>{routeInstruction(step)}</strong><small>{step?.distanceMeters ? `${formatRouteDistance(step.distanceMeters)} on this step` : route.roadSummary || 'OSRM road route'}</small></div></div><div className="route-guidance__meta"><span><b>{formatDuration(route.durationSeconds)}</b> estimated route time</span><span><b>{formatRouteDistance(route.distanceMeters)}</b> total distance</span></div>{gpsError && <p className="safety-inline-error">{gpsError}</p>}<p className="route-guidance__warning">Road data can change. Follow closures, emergency personnel, and local traffic signs over NAVIRA guidance.</p>{active ? <button type="button" onClick={onStop}>Stop guidance</button> : <button type="button" onClick={onStart}><NavigationArrow /> Start live guidance</button>}</section>;
+  return <section className={`route-guidance ${active ? 'is-active' : ''}`} aria-live="polite"><div className="route-guidance__turn"><NavigationArrow weight="fill" /><div><span>{active ? Number.isFinite(distanceKm) ? `${formatDistance(distanceKm)} to next instruction` : 'Waiting for GPS' : 'LIVE ROAD GUIDANCE'}</span><strong>{routeInstruction(step)}</strong><small>{step?.distanceMeters ? `${formatRouteDistance(step.distanceMeters)} on this step` : route.roadSummary || 'OSRM road route'}</small></div></div>{navigationState && <div className={`navigation-awareness navigation-awareness--${navigationState.status}`}><span>{navigationState.status === 'rerouting' ? 'RE-EVALUATING ROUTE' : navigationState.status === 'degraded' ? 'DEGRADED ROAD AWARENESS' : 'ROUTE MONITOR ACTIVE'}</span><strong>{navigationState.message}</strong>{navigationState.checkedAt && <small>Checked {new Date(navigationState.checkedAt).toLocaleTimeString()}</small>}</div>}<div className="route-guidance__meta"><span><b>{formatDuration(route.durationSeconds)}</b> estimated route time</span><span><b>{formatRouteDistance(route.distanceMeters)}</b> total distance</span></div>{route.roadRestrictions?.length > 0 && <div className="route-restriction-list"><span>RESTRICTIONS ON THIS ALTERNATIVE</span>{route.roadRestrictions.map((item) => <p key={item.id}><b>{item.status.replaceAll('_', ' ')}</b>{item.title} · {item.source?.name}</p>)}</div>}{gpsError && <p className="safety-inline-error">{gpsError}</p>}<p className="route-guidance__warning">Road data can change. Follow closures, emergency personnel, and local traffic signs over NAVIRA guidance.</p>{active ? <button type="button" onClick={onStop}>Stop guidance</button> : <button type="button" onClick={onStart}><NavigationArrow /> Start live guidance</button>}</section>;
 }
 
 function RouteLedger({ routing, selectedRouteId, onSelect, onExplain, onShare, onNavigate, operatorDefined = false, aiState, shareState }) {
@@ -182,6 +185,7 @@ function RouteLedger({ routing, selectedRouteId, onSelect, onExplain, onShare, o
       </div>
       {!routing.saferId && <p className="route-comparison__notice">OSRM did not return an alternative with lower {operatorDefined ? 'operator alert-area' : 'verified hazard'} exposure. NAVIRA will not label an alternative “safer.”</p>}
       <div className="route-provenance"><span>Road routing: OSRM · OpenStreetMap</span><span>Retrieved {new Date(routing.fetchedAt).toLocaleString()}</span></div>
+      <div className={`route-awareness ${routing.roadAwareness?.status === 'degraded' ? 'is-degraded' : ''}`}><span>ROAD RESTRICTION AWARENESS</span><strong>{routing.roadAwareness?.message || 'No restriction source status was returned.'}</strong><small>No restriction record is never treated as proof that a road is open.</small>{routing.rejectedRoutes?.length > 0 && <b>{routing.rejectedRoutes.length} OSRM alternative{routing.rejectedRoutes.length === 1 ? '' : 's'} rejected because a confirmed closure intersected the route.</b>}</div>
       <button className="ai-explain-button" type="button" onClick={onExplain} disabled={aiState.loading}>{aiState.loading ? <SpinnerGap className="spin" /> : <Robot />}<span>{aiState.loading ? 'Explaining verified differences' : 'Explain why the routes differ'}</span></button>
       <button className="share-route-button" type="button" onClick={onShare} disabled={shareState.loading}>{shareState.loading ? <SpinnerGap className="spin" /> : <Broadcast />}<span>Share selected route with operations</span></button>
       <button className="route-navigate-button" type="button" onClick={onNavigate}><NavigationArrow /><span>Open live driving guidance</span></button>
@@ -197,6 +201,8 @@ export default function CivilianSafety() {
   const { profile } = useAuth();
   const { data: operations, mutate } = useOperations();
   const { data, events, sources, loading, error, selectedEvent, selectEvent, refresh } = useLiveData();
+  const roadData = useRoadData();
+  const alertData = useAlertData();
   const [searchParams] = useSearchParams();
   const [communitySelectedId, setCommunitySelectedId] = useState(null);
   const [mode, setMode] = useState('world');
@@ -213,14 +219,26 @@ export default function CivilianSafety() {
   const [aiState, setAiState] = useState({ loading: false, explanation: null, model: null, error: null });
   const [helpState, setHelpState] = useState({ loading: false, error: null, success: null });
   const [shareState, setShareState] = useState({ loading: false, error: null, success: null });
+  const [navigationState, setNavigationState] = useState({ status: 'idle', message: 'Start guidance to monitor verified hazard and road-source changes.', checkedAt: null });
+  const [routeHistory, setRouteHistory] = useState([]);
   const openedNotificationEvent = useRef(null);
+  const navigationSessionId = useRef(globalThis.crypto?.randomUUID?.() || `nav-${Date.now()}`);
+  const roadFingerprintRef = useRef('');
+  const hazardFingerprintRef = useRef('');
+  const alertFingerprintRef = useRef('');
 
   useEffect(() => {
     document.body.classList.add('civilian-mode');
     return () => document.body.classList.remove('civilian-mode');
   }, []);
 
-  const safetyEvents = useMemo(() => [...events, ...operations.communityEvents], [events, operations.communityEvents]);
+  const officialAlertEvents = useMemo(() => alertData.alerts.filter((item) => item.geometry).map((item) => ({
+    ...item, title: item.headline, description: item.description, type: item.event, severity: item.severity,
+    severityLevel: String(item.severity || '').toLowerCase(), timestamp: item.sentAt || item.effectiveAt,
+    updatedAt: item.sentAt || item.effectiveAt, status: item.status, geometryKind: item.geometry.type,
+    sourceUrl: item.source?.href, sourceEventId: item.sourceAlertId, source: { ...item.source, id: 'cap' },
+  })), [alertData.alerts]);
+  const safetyEvents = useMemo(() => [...events, ...officialAlertEvents, ...operations.communityEvents], [events, officialAlertEvents, operations.communityEvents]);
   const communitySelected = operations.communityEvents.find((event) => event.id === communitySelectedId) || null;
   const activeEvent = communitySelected || selectedEvent;
   const selectSafetyEvent = (value) => {
@@ -245,6 +263,7 @@ export default function CivilianSafety() {
     assessment.boundaries?.features.forEach((feature, index) => hazards.set(`${activeEvent?.id}:verified:${index}`, { id: `${activeEvent?.id}:verified:${index}`, title: activeEvent?.title || 'Selected verified area', geometry: feature.geometry }));
     return [...hazards.values()];
   }, [safetyEvents, assessment.boundaries, activeEvent]);
+  const hazardFingerprint = useMemo(() => routeHazards.map((item) => `${item.id}:${JSON.stringify(item.geometry)}`).sort().join('|'), [routeHazards]);
 
   useEffect(() => {
     setPlanOpen(false);
@@ -257,6 +276,9 @@ export default function CivilianSafety() {
     setAiState({ loading: false, explanation: null, model: null, error: null });
     setHelpState({ loading: false, error: null, success: null });
     setShareState({ loading: false, error: null, success: null });
+    setNavigationState({ status: 'idle', message: 'Start guidance to monitor verified hazard and road-source changes.', checkedAt: null });
+    setRouteHistory([]);
+    navigationSessionId.current = globalThis.crypto?.randomUUID?.() || `nav-${Date.now()}`;
   }, [activeEvent?.id]);
 
   const requestLocation = (preserveSelection = false) => {
@@ -322,9 +344,24 @@ export default function CivilianSafety() {
     setAiState({ loading: false, explanation: null, model: null, error: null });
   };
 
-  const compareRoutes = async () => {
+  const recordNavigation = useCallback((status, route, reason = null, previousRouteId = null) => {
+    if (!route || !destination || !activeEvent) return Promise.resolve();
+    return mutate('navigation-event', {
+      sessionId: navigationSessionId.current, status, eventId: activeEvent.id, eventTitle: activeEvent.title,
+      destination: { label: destination.label, longitude: destination.longitude, latitude: destination.latitude },
+      route: {
+        id: route.id, durationSeconds: route.durationSeconds, distanceMeters: route.distanceMeters,
+        exposureMeters: route.exposureMeters, roadRestrictionStatus: route.roadRestrictionStatus,
+      },
+      previousRouteId, reason,
+    }).catch(() => null);
+  }, [activeEvent, destination, mutate]);
+
+  const compareRoutes = useCallback(async (rerouteReason = null) => {
     if (!location || !destination || !assessment.routeAllowed) return;
-    setRouting({ loading: true, routes: [], fastestId: null, saferId: null, fetchedAt: null, error: null });
+    const previousRoute = routing.routes.find((item) => item.id === (guidanceRouteId || selectedRouteId));
+    if (rerouteReason) setNavigationState({ status: 'rerouting', message: rerouteReason, checkedAt: new Date().toISOString() });
+    else setRouting({ loading: true, routes: [], fastestId: null, saferId: null, fetchedAt: null, error: null });
     setAiState({ loading: false, explanation: null, model: null, error: null });
     const params = new URLSearchParams({ startLng: location.longitude, startLat: location.latitude, endLng: destination.longitude, endLat: destination.latitude });
     try {
@@ -333,12 +370,70 @@ export default function CivilianSafety() {
       const result = await response.json();
       const analysis = analyzeRoutes(result.routes || [], routeHazards);
       if (!analysis.routes.length) throw new Error('The routing engine returned no usable driving route.');
-      setRouting({ loading: false, ...analysis, fetchedAt: result.fetchedAt, error: null });
+      const next = { loading: false, ...analysis, fetchedAt: result.fetchedAt, error: null, roadAwareness: result.roadAwareness, rejectedRoutes: result.rejectedRoutes || [] };
+      setRouting(next);
       setSelectedRouteId(analysis.fastestId);
+      const routeBounds = [Math.min(location.longitude, destination.longitude) - .15, Math.min(location.latitude, destination.latitude) - .15, Math.max(location.longitude, destination.longitude) + .15, Math.max(location.latitude, destination.latitude) + .15];
+      roadData.refresh({ bounds: routeBounds }).catch(() => {});
+      if (rerouteReason) {
+        if (previousRoute) setRouteHistory((current) => [{ id: previousRoute.id, reason: rerouteReason, replacedAt: new Date().toISOString(), durationSeconds: previousRoute.durationSeconds, distanceMeters: previousRoute.distanceMeters }, ...current].slice(0, 12));
+        setGuidanceRouteId(analysis.fastestId);
+        const replacement = analysis.routes.find((item) => item.id === analysis.fastestId);
+        if (replacement) recordNavigation('REROUTED', replacement, rerouteReason, previousRoute?.id || null);
+        setNavigationState({ status: result.roadAwareness?.status === 'degraded' ? 'degraded' : 'monitoring', message: rerouteReason, checkedAt: new Date().toISOString() });
+      }
     } catch (reason) {
-      setRouting({ loading: false, routes: [], fastestId: null, saferId: null, fetchedAt: null, error: reason.message });
+      if (rerouteReason) setNavigationState({ status: 'degraded', message: `Route could not be refreshed: ${reason.message}. The previous route remains visible but is no longer confirmed current.`, checkedAt: new Date().toISOString() });
+      else setRouting({ loading: false, routes: [], fastestId: null, saferId: null, fetchedAt: null, error: reason.message });
     }
-  };
+  }, [location, destination, assessment.routeAllowed, routeHazards, routing.routes, guidanceRouteId, selectedRouteId, roadData.refresh, recordNavigation]);
+
+  useEffect(() => {
+    if (!guidanceRouteId) {
+      roadFingerprintRef.current = roadData.fingerprint;
+      hazardFingerprintRef.current = hazardFingerprint;
+      alertFingerprintRef.current = alertData.fingerprint;
+      return;
+    }
+    const route = routing.routes.find((item) => item.id === guidanceRouteId);
+    if (!route) return;
+    const roadChanged = roadFingerprintRef.current && roadFingerprintRef.current !== roadData.fingerprint;
+    const hazardsChanged = hazardFingerprintRef.current && hazardFingerprintRef.current !== hazardFingerprint;
+    const alertsChanged = alertFingerprintRef.current && alertFingerprintRef.current !== alertData.fingerprint;
+    roadFingerprintRef.current = roadData.fingerprint;
+    hazardFingerprintRef.current = hazardFingerprint;
+    alertFingerprintRef.current = alertData.fingerprint;
+
+    if (roadData.error || roadData.coverage.status === 'degraded') {
+      setNavigationState({ status: 'degraded', message: `${roadData.coverage.message} Official alert monitoring is unavailable until a jurisdiction CAP feed is connected.`, checkedAt: new Date().toISOString() });
+    } else if (alertData.coverage.status === 'degraded') {
+      setNavigationState((current) => current.status === 'idle' ? { status: 'degraded', message: `${alertData.coverage.message} Hazard and road-source monitoring remains active.`, checkedAt: new Date().toISOString() } : current);
+    } else if (!roadChanged && !hazardsChanged && !alertsChanged) {
+      setNavigationState((current) => current.status === 'idle' ? { status: 'monitoring', message: 'Monitoring connected hazard geometry, OASIS CAP alerts, and Open511 road restrictions.', checkedAt: new Date().toISOString() } : current);
+    }
+
+    if (roadChanged) {
+      const hits = roadRestrictionHits(route.geometry, roadData.restrictions);
+      const closure = hits.find((item) => item.status === 'CONFIRMED_CLOSED');
+      const obstruction = hits.find((item) => item.status === 'REPORTED_OBSTRUCTION');
+      if (closure) compareRoutes(`Route changed because a confirmed closure from ${closure.source?.name || 'the connected road source'} intersects the active route.`);
+      else if (obstruction) compareRoutes(`Route changed because a reported obstruction from ${obstruction.source?.name || 'the connected road source'} intersects the active route.`);
+    }
+
+    if (hazardsChanged) {
+      const destinationAffected = destination && routeHazards.some((hazard) => assessVerifiedArea(destination, { geometry: hazard.geometry }, null).state === 'inside');
+      if (destinationAffected) {
+        setNavigationState({ status: 'degraded', message: 'The selected destination now intersects verified hazard geometry. Choose a different destination before continuing.', checkedAt: new Date().toISOString() });
+        return;
+      }
+      const reanalysis = analyzeRoutes([route], routeHazards).routes[0];
+      if (reanalysis && reanalysis.exposureMeters > (route.exposureMeters || 0) + 50) compareRoutes('Route changed because updated verified hazard geometry materially increased mapped exposure on the active route.');
+    }
+    if (alertsChanged) {
+      const affectedAlerts = officialAlertEvents.filter((alert) => analyzeRoutes([route], [{ id: alert.id, title: alert.title, geometry: alert.geometry }]).routes[0]?.exposureMeters > 1);
+      if (affectedAlerts.length) compareRoutes(`Route changed because the official alert “${affectedAlerts[0].title}” affects the active route.`);
+    }
+  }, [guidanceRouteId, roadData.fingerprint, roadData.error, roadData.coverage.status, roadData.coverage.message, roadData.restrictions, alertData.fingerprint, alertData.coverage.status, alertData.coverage.message, officialAlertEvents, hazardFingerprint, routeHazards, routing.routes, destination, compareRoutes]);
 
   const explainRoutes = async () => {
     setAiState({ loading: true, explanation: null, model: null, error: null });
@@ -444,9 +539,9 @@ export default function CivilianSafety() {
             {location && <Assessment event={activeEvent} boundary={boundary} assessment={boundary.state === 'loading' ? { ...assessment, state: 'loading' } : assessment} onPlan={() => setPlanOpen(true)} />}
             {location && assessment.routeAllowed && <HelpRequestForm onSubmit={sendHelpRequest} state={helpState} operatorDefined={Boolean(activeEvent?.operatorDefinedArea)} />}
             {planOpen && assessment.routeAllowed && <DestinationSearch destination={destination} query={query} onQuery={setQuery} state={searchState} onSearch={searchDestination} onSelect={chooseDestination} />}
-            {planOpen && destination && assessment.routeAllowed && <button type="button" className="compare-routes-button" onClick={compareRoutes} disabled={routing.loading}><Path /> Compare real road routes <ArrowRight /></button>}
+            {planOpen && destination && assessment.routeAllowed && <button type="button" className="compare-routes-button" onClick={() => compareRoutes()} disabled={routing.loading}><Path /> Compare real road routes <ArrowRight /></button>}
             <RouteLedger routing={routing} selectedRouteId={selectedRouteId} onSelect={(id) => { setSelectedRouteId(id); setGuidanceRouteId(null); }} onExplain={explainRoutes} onShare={shareRoute} onNavigate={() => setGuidanceRouteId(selectedRouteId)} operatorDefined={Boolean(activeEvent?.operatorDefinedArea)} aiState={aiState} shareState={shareState} />
-            {guidanceRoute && <RouteGuidance route={guidanceRoute} location={location} active={guidanceRouteId === guidanceRoute.id} onStart={() => setGuidanceRouteId(guidanceRoute.id)} onStop={() => setGuidanceRouteId(null)} onLocation={setLocation} />}
+            {guidanceRoute && <><RouteGuidance route={guidanceRoute} location={location} active={guidanceRouteId === guidanceRoute.id} onStart={() => { roadFingerprintRef.current = roadData.fingerprint; hazardFingerprintRef.current = hazardFingerprint; alertFingerprintRef.current = alertData.fingerprint; const degraded = roadData.coverage.status === 'degraded' || alertData.coverage.status === 'degraded'; setNavigationState({ status: degraded ? 'degraded' : 'monitoring', message: degraded ? `${roadData.coverage.message} ${alertData.coverage.message}` : 'Monitoring connected hazard geometry, OASIS CAP alerts, and Open511 road restrictions.', checkedAt: new Date().toISOString() }); setGuidanceRouteId(guidanceRoute.id); recordNavigation('STARTED', guidanceRoute, 'Civilian started monitored driving guidance.'); }} onStop={() => { recordNavigation('STOPPED', guidanceRoute, 'Civilian stopped monitored driving guidance.'); setGuidanceRouteId(null); setNavigationState({ status: 'idle', message: 'Guidance stopped. Route monitoring is paused.', checkedAt: new Date().toISOString() }); }} onLocation={setLocation} navigationState={navigationState} />{routeHistory.length > 0 && <details className="route-history"><summary>Route change history <span>{routeHistory.length}</span></summary>{routeHistory.map((item) => <article key={`${item.id}:${item.replacedAt}`}><time>{new Date(item.replacedAt).toLocaleTimeString()}</time><strong>{item.reason}</strong><small>Replaced route · {formatDuration(item.durationSeconds)} · {formatRouteDistance(item.distanceMeters)}</small></article>)}</details>}</>}
           </>}
         </aside>
 
