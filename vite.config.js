@@ -222,5 +222,14 @@ function liveDataPlugin() {
 
 export default defineConfig(({ mode }) => {
   Object.assign(process.env, loadEnv(mode, process.cwd(), ''));
-  return { plugins: [react(), liveDataPlugin()] };
+  const renderHostname = String(process.env.RENDER_EXTERNAL_HOSTNAME || '').trim();
+  const allowedHosts = [...new Set([
+    'navira-rlzu.onrender.com',
+    renderHostname,
+  ].filter(Boolean))];
+
+  return {
+    plugins: [react(), liveDataPlugin()],
+    preview: { allowedHosts },
+  };
 });
