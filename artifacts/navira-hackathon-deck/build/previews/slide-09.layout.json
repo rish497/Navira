@@ -1,0 +1,1296 @@
+{
+  "schema": "openai.presentation.layout/v4",
+  "unit": "px",
+  "slide": {
+    "aid": "sl/rzr3bz",
+    "id": "rzr3bz",
+    "slide": 9,
+    "layoutId": "c5858e9a-2a0f-44b3-97f5-9facf20ab11d",
+    "layoutName": "Title Slide",
+    "layoutType": "title",
+    "masterLayoutId": "2521b1f1-6fb5-4fa9-bb5c-80e2553575e3",
+    "masterLayoutName": "Master",
+    "backgroundColor": "#FAF8F4",
+    "frame": {
+      "left": 0,
+      "top": 0,
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "theme": {
+    "colorSchemeName": "ChatGPT",
+    "colors": {
+      "accent1": "#156082",
+      "accent2": "#E97132",
+      "accent3": "#196B24",
+      "accent4": "#0F9ED5",
+      "accent5": "#A02B93",
+      "accent6": "#4EA72E",
+      "bg1": "#FFFFFF",
+      "bg2": "#000000",
+      "tx1": "#1F1F1F",
+      "tx2": "#FFFFFF",
+      "dk1": "#000000",
+      "lt1": "#FFFFFF",
+      "dk2": "#0E2841",
+      "lt2": "#E8E8E8",
+      "hlink": "#467886",
+      "folHlink": "#96607D"
+    },
+    "typefaces": [
+      "Arial",
+      "Bahnschrift"
+    ]
+  },
+  "inheritedLayers": [
+    {
+      "scope": "layout",
+      "id": "c5858e9a-2a0f-44b3-97f5-9facf20ab11d",
+      "name": "Title Slide",
+      "type": "title",
+      "parentLayoutId": "2521b1f1-6fb5-4fa9-bb5c-80e2553575e3",
+      "elements": []
+    },
+    {
+      "scope": "master",
+      "id": "2521b1f1-6fb5-4fa9-bb5c-80e2553575e3",
+      "name": "Master",
+      "type": "master",
+      "elements": []
+    }
+  ],
+  "elements": [
+    {
+      "order": 1,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/z6l8zils",
+      "id": "1",
+      "bbox": [
+        48,
+        26,
+        120,
+        22
+      ],
+      "geometry": "rect",
+      "text": "NAVIRA",
+      "textPreview": "NAVIRA",
+      "resolvedFontSize": 14,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 14,
+        "typeface": "Bahnschrift",
+        "color": "#0F1113",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "NAVIRA"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "NAVIRA",
+          "lineSpacingPercent": 100000,
+          "resolvedTextStyle": {
+            "fontSize": 14,
+            "typeface": "Bahnschrift",
+            "color": "#0F1113",
+            "bold": true,
+            "alignment": "left",
+            "lineSpacing": 1
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "NAVIRA",
+              "fontSize": 14,
+              "typeface": "Bahnschrift",
+              "color": "#0F1113",
+              "bold": true,
+              "alignment": "left",
+              "lineSpacing": 1
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 2,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/07u9snmd",
+      "id": "2",
+      "bbox": [
+        1188,
+        26,
+        44,
+        22
+      ],
+      "geometry": "rect",
+      "text": "09",
+      "textPreview": "09",
+      "resolvedFontSize": 13,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 13,
+        "typeface": "Bahnschrift",
+        "color": "#68737A",
+        "bold": true,
+        "alignment": "right",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "09"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "09",
+          "lineSpacingPercent": 100000,
+          "resolvedTextStyle": {
+            "fontSize": 13,
+            "typeface": "Bahnschrift",
+            "color": "#68737A",
+            "bold": true,
+            "alignment": "right",
+            "lineSpacing": 1
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "09",
+              "fontSize": 13,
+              "typeface": "Bahnschrift",
+              "color": "#68737A",
+              "bold": true,
+              "alignment": "right",
+              "lineSpacing": 1
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 3,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/l8na1s3y",
+      "id": "3",
+      "bbox": [
+        48,
+        59,
+        1184,
+        1
+      ],
+      "geometry": "rect",
+      "fillColor": "#CBC7C0",
+      "lineWidth": 0
+    },
+    {
+      "order": 4,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/q1crmd4b",
+      "id": "4",
+      "bbox": [
+        46,
+        98,
+        730,
+        526
+      ],
+      "geometry": "rect",
+      "fillColor": "#CBC7C0",
+      "lineWidth": 0
+    },
+    {
+      "order": 5,
+      "kind": "image",
+      "scope": "slide",
+      "aid": "im/uxgjehsn",
+      "id": "5",
+      "bbox": [
+        48,
+        100,
+        726,
+        522
+      ],
+      "geometry": "rect",
+      "alt": "NAVIRA operator people and hazards map",
+      "contentType": "image/png",
+      "imageFit": "cover",
+      "imageMask": {
+        "geometry": "rect"
+      },
+      "asset": {
+        "assetId": "c0de1e99-d1fc-4b8a-800d-e9fd853633c8",
+        "contentType": "image/png",
+        "byteLength": 334215
+      }
+    },
+    {
+      "order": 6,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/c3u9o3mh",
+      "id": "6",
+      "bbox": [
+        818,
+        106,
+        320,
+        20
+      ],
+      "geometry": "rect",
+      "text": "PROTECT / FIELD OPERATIONS",
+      "textPreview": "PROTECT / FIELD OPERATIONS",
+      "resolvedFontSize": 12,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 12,
+        "typeface": "Bahnschrift",
+        "color": "#FF3B1F",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "PROTECT / FIELD OPERATIONS"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "PROTECT / FIELD OPERATIONS",
+          "lineSpacingPercent": 100000,
+          "resolvedTextStyle": {
+            "fontSize": 12,
+            "typeface": "Bahnschrift",
+            "color": "#FF3B1F",
+            "bold": true,
+            "alignment": "left",
+            "lineSpacing": 1
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "PROTECT / FIELD OPERATIONS",
+              "fontSize": 12,
+              "typeface": "Bahnschrift",
+              "color": "#FF3B1F",
+              "bold": true,
+              "alignment": "left",
+              "lineSpacing": 1
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 7,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/d43qx832",
+      "id": "7",
+      "bbox": [
+        818,
+        132,
+        32,
+        3
+      ],
+      "geometry": "rect",
+      "fillColor": "#FF3B1F",
+      "lineWidth": 0
+    },
+    {
+      "order": 8,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/axwryx4f",
+      "id": "8",
+      "bbox": [
+        818,
+        150,
+        360,
+        86
+      ],
+      "geometry": "rect",
+      "text": "SEE PEOPLE.\nMOVE RESPONSE.",
+      "textPreview": "SEE PEOPLE. | MOVE RESPONSE.",
+      "resolvedFontSize": 38,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 38,
+        "typeface": "Bahnschrift",
+        "color": "#0F1113",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "SEE PEOPLE."
+          },
+          {
+            "index": 2,
+            "text": "MOVE RESPONSE."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "SEE PEOPLE.",
+          "lineSpacingPercent": 90000,
+          "resolvedTextStyle": {
+            "fontSize": 38,
+            "typeface": "Bahnschrift",
+            "color": "#0F1113",
+            "bold": true,
+            "alignment": "left",
+            "lineSpacing": 0.9
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "SEE PEOPLE.",
+              "fontSize": 38,
+              "typeface": "Bahnschrift",
+              "color": "#0F1113",
+              "bold": true,
+              "alignment": "left",
+              "lineSpacing": 0.9
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 2,
+          "text": "MOVE RESPONSE.",
+          "lineSpacingPercent": 90000,
+          "resolvedTextStyle": {
+            "fontSize": 38,
+            "typeface": "Bahnschrift",
+            "color": "#0F1113",
+            "bold": true,
+            "alignment": "left",
+            "lineSpacing": 0.9
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "MOVE RESPONSE.",
+              "fontSize": 38,
+              "typeface": "Bahnschrift",
+              "color": "#0F1113",
+              "bold": true,
+              "alignment": "left",
+              "lineSpacing": 0.9
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 9,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/vy5s72l0",
+      "id": "9",
+      "bbox": [
+        818,
+        278,
+        360,
+        1
+      ],
+      "geometry": "rect",
+      "fillColor": "#D9D5CF",
+      "lineWidth": 0
+    },
+    {
+      "order": 10,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/fy5w3a5c",
+      "id": "10",
+      "bbox": [
+        818,
+        290,
+        160,
+        24
+      ],
+      "geometry": "rect",
+      "text": "PEOPLE + HAZARDS",
+      "textPreview": "PEOPLE + HAZARDS",
+      "resolvedFontSize": 14,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 14,
+        "typeface": "Bahnschrift",
+        "color": "#A52210",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "PEOPLE + HAZARDS"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "PEOPLE + HAZARDS",
+          "lineSpacingPercent": 100000,
+          "resolvedTextStyle": {
+            "fontSize": 14,
+            "typeface": "Bahnschrift",
+            "color": "#A52210",
+            "bold": true,
+            "alignment": "left",
+            "lineSpacing": 1
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "PEOPLE + HAZARDS",
+              "fontSize": 14,
+              "typeface": "Bahnschrift",
+              "color": "#A52210",
+              "bold": true,
+              "alignment": "left",
+              "lineSpacing": 1
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 11,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/uxcfu5or",
+      "id": "11",
+      "bbox": [
+        982,
+        286,
+        206,
+        50
+      ],
+      "geometry": "rect",
+      "text": "Consented civilian locations, verified events and reviewed evidence.",
+      "textPreview": "Consented civilian locations, verified events and reviewed evidence.",
+      "resolvedFontSize": 13.23,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 15,
+        "typeface": "Arial",
+        "color": "#191C1F",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 0.88,
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 3,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Consented civilian locations,"
+          },
+          {
+            "index": 2,
+            "text": "verified events and reviewed"
+          },
+          {
+            "index": 3,
+            "text": "evidence."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Consented civilian locations, verified events and reviewed evidence.",
+          "lineSpacingPercent": 105000,
+          "resolvedTextStyle": {
+            "fontSize": 15,
+            "typeface": "Arial",
+            "color": "#191C1F",
+            "alignment": "left",
+            "lineSpacing": 1.05
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "Consented civilian locations, verified events and reviewed evidence.",
+              "fontSize": 15,
+              "typeface": "Arial",
+              "color": "#191C1F",
+              "alignment": "left",
+              "lineSpacing": 1.05
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 12,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/hkne50ni",
+      "id": "12",
+      "bbox": [
+        818,
+        350,
+        360,
+        1
+      ],
+      "geometry": "rect",
+      "fillColor": "#D9D5CF",
+      "lineWidth": 0
+    },
+    {
+      "order": 13,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/gzexwvmx",
+      "id": "13",
+      "bbox": [
+        818,
+        362,
+        160,
+        24
+      ],
+      "geometry": "rect",
+      "text": "HELP QUEUE",
+      "textPreview": "HELP QUEUE",
+      "resolvedFontSize": 14,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 14,
+        "typeface": "Bahnschrift",
+        "color": "#A52210",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "HELP QUEUE"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "HELP QUEUE",
+          "lineSpacingPercent": 100000,
+          "resolvedTextStyle": {
+            "fontSize": 14,
+            "typeface": "Bahnschrift",
+            "color": "#A52210",
+            "bold": true,
+            "alignment": "left",
+            "lineSpacing": 1
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "HELP QUEUE",
+              "fontSize": 14,
+              "typeface": "Bahnschrift",
+              "color": "#A52210",
+              "bold": true,
+              "alignment": "left",
+              "lineSpacing": 1
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 14,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/3m5w7a5o",
+      "id": "14",
+      "bbox": [
+        982,
+        358,
+        206,
+        50
+      ],
+      "geometry": "rect",
+      "text": "Requests progress from verified to assigned, dispatched, on scene and resolved.",
+      "textPreview": "Requests progress from verified to assigned, dispatched, on scene and resolved.",
+      "resolvedFontSize": 13.23,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 15,
+        "typeface": "Arial",
+        "color": "#191C1F",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 0.88,
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 3,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Requests progress from verified to"
+          },
+          {
+            "index": 2,
+            "text": "assigned, dispatched, on scene"
+          },
+          {
+            "index": 3,
+            "text": "and resolved."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Requests progress from verified to assigned, dispatched, on scene and resolved.",
+          "lineSpacingPercent": 105000,
+          "resolvedTextStyle": {
+            "fontSize": 15,
+            "typeface": "Arial",
+            "color": "#191C1F",
+            "alignment": "left",
+            "lineSpacing": 1.05
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "Requests progress from verified to assigned, dispatched, on scene and resolved.",
+              "fontSize": 15,
+              "typeface": "Arial",
+              "color": "#191C1F",
+              "alignment": "left",
+              "lineSpacing": 1.05
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 15,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/2lwfy543",
+      "id": "15",
+      "bbox": [
+        818,
+        422,
+        360,
+        1
+      ],
+      "geometry": "rect",
+      "fillColor": "#D9D5CF",
+      "lineWidth": 0
+    },
+    {
+      "order": 16,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/pone9kne",
+      "id": "16",
+      "bbox": [
+        818,
+        434,
+        160,
+        24
+      ],
+      "geometry": "rect",
+      "text": "RESPONDER DISPATCH",
+      "textPreview": "RESPONDER DISPATCH",
+      "resolvedFontSize": 14,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 14,
+        "typeface": "Bahnschrift",
+        "color": "#A52210",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "RESPONDER DISPATCH"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "RESPONDER DISPATCH",
+          "lineSpacingPercent": 100000,
+          "resolvedTextStyle": {
+            "fontSize": 14,
+            "typeface": "Bahnschrift",
+            "color": "#A52210",
+            "bold": true,
+            "alignment": "left",
+            "lineSpacing": 1
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "RESPONDER DISPATCH",
+              "fontSize": 14,
+              "typeface": "Bahnschrift",
+              "color": "#A52210",
+              "bold": true,
+              "alignment": "left",
+              "lineSpacing": 1
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 17,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/4nex0fmt",
+      "id": "17",
+      "bbox": [
+        982,
+        430,
+        206,
+        50
+      ],
+      "geometry": "rect",
+      "text": "Role-checked assignments with acknowledgement and status transitions.",
+      "textPreview": "Role-checked assignments with acknowledgement and status transitions.",
+      "resolvedFontSize": 13.23,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 15,
+        "typeface": "Arial",
+        "color": "#191C1F",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 0.88,
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 3,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Role-checked assignments with"
+          },
+          {
+            "index": 2,
+            "text": "acknowledgement and status"
+          },
+          {
+            "index": 3,
+            "text": "transitions."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Role-checked assignments with acknowledgement and status transitions.",
+          "lineSpacingPercent": 105000,
+          "resolvedTextStyle": {
+            "fontSize": 15,
+            "typeface": "Arial",
+            "color": "#191C1F",
+            "alignment": "left",
+            "lineSpacing": 1.05
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "Role-checked assignments with acknowledgement and status transitions.",
+              "fontSize": 15,
+              "typeface": "Arial",
+              "color": "#191C1F",
+              "alignment": "left",
+              "lineSpacing": 1.05
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 18,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/rqpwbu5k",
+      "id": "18",
+      "bbox": [
+        818,
+        494,
+        360,
+        1
+      ],
+      "geometry": "rect",
+      "fillColor": "#D9D5CF",
+      "lineWidth": 0
+    },
+    {
+      "order": 19,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/qpwf2p4z",
+      "id": "19",
+      "bbox": [
+        818,
+        506,
+        160,
+        24
+      ],
+      "geometry": "rect",
+      "text": "RESOURCE COORDINATION",
+      "textPreview": "RESOURCE COORDINATION",
+      "resolvedFontSize": 13.24,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 14,
+        "typeface": "Bahnschrift",
+        "color": "#A52210",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 0.95,
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "RESOURCE"
+          },
+          {
+            "index": 2,
+            "text": "COORDINATION"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "RESOURCE COORDINATION",
+          "lineSpacingPercent": 100000,
+          "resolvedTextStyle": {
+            "fontSize": 14,
+            "typeface": "Bahnschrift",
+            "color": "#A52210",
+            "bold": true,
+            "alignment": "left",
+            "lineSpacing": 1
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "RESOURCE COORDINATION",
+              "fontSize": 14,
+              "typeface": "Bahnschrift",
+              "color": "#A52210",
+              "bold": true,
+              "alignment": "left",
+              "lineSpacing": 1
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 20,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/ml0zuto7",
+      "id": "20",
+      "bbox": [
+        982,
+        502,
+        206,
+        50
+      ],
+      "geometry": "rect",
+      "text": "Allocate verified stock without exceeding available quantities.",
+      "textPreview": "Allocate verified stock without exceeding available quantities.",
+      "resolvedFontSize": 15,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 15,
+        "typeface": "Arial",
+        "color": "#191C1F",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Allocate verified stock without"
+          },
+          {
+            "index": 2,
+            "text": "exceeding available quantities."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Allocate verified stock without exceeding available quantities.",
+          "lineSpacingPercent": 105000,
+          "resolvedTextStyle": {
+            "fontSize": 15,
+            "typeface": "Arial",
+            "color": "#191C1F",
+            "alignment": "left",
+            "lineSpacing": 1.05
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "Allocate verified stock without exceeding available quantities.",
+              "fontSize": 15,
+              "typeface": "Arial",
+              "color": "#191C1F",
+              "alignment": "left",
+              "lineSpacing": 1.05
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 21,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/nm903eps",
+      "id": "21",
+      "bbox": [
+        818,
+        566,
+        360,
+        1
+      ],
+      "geometry": "rect",
+      "fillColor": "#D9D5CF",
+      "lineWidth": 0
+    },
+    {
+      "order": 22,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/onihwj6d",
+      "id": "22",
+      "bbox": [
+        818,
+        578,
+        160,
+        24
+      ],
+      "geometry": "rect",
+      "text": "ROUTE MONITORING",
+      "textPreview": "ROUTE MONITORING",
+      "resolvedFontSize": 14,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 14,
+        "typeface": "Bahnschrift",
+        "color": "#A52210",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "ROUTE MONITORING"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "ROUTE MONITORING",
+          "lineSpacingPercent": 100000,
+          "resolvedTextStyle": {
+            "fontSize": 14,
+            "typeface": "Bahnschrift",
+            "color": "#A52210",
+            "bold": true,
+            "alignment": "left",
+            "lineSpacing": 1
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "ROUTE MONITORING",
+              "fontSize": 14,
+              "typeface": "Bahnschrift",
+              "color": "#A52210",
+              "bold": true,
+              "alignment": "left",
+              "lineSpacing": 1
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 23,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/9ori5o7y",
+      "id": "23",
+      "bbox": [
+        982,
+        574,
+        206,
+        50
+      ],
+      "geometry": "rect",
+      "text": "Surface hazards and trusted restrictions that intersect active routes.",
+      "textPreview": "Surface hazards and trusted restrictions that intersect active routes.",
+      "resolvedFontSize": 13.23,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 15,
+        "typeface": "Arial",
+        "color": "#191C1F",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 0.88,
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 3,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Surface hazards and trusted"
+          },
+          {
+            "index": 2,
+            "text": "restrictions that intersect active"
+          },
+          {
+            "index": 3,
+            "text": "routes."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Surface hazards and trusted restrictions that intersect active routes.",
+          "lineSpacingPercent": 105000,
+          "resolvedTextStyle": {
+            "fontSize": 15,
+            "typeface": "Arial",
+            "color": "#191C1F",
+            "alignment": "left",
+            "lineSpacing": 1.05
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "Surface hazards and trusted restrictions that intersect active routes.",
+              "fontSize": 15,
+              "typeface": "Arial",
+              "color": "#191C1F",
+              "alignment": "left",
+              "lineSpacing": 1.05
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    }
+  ],
+  "composeRuns": []
+}

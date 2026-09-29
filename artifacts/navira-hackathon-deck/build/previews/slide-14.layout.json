@@ -1,0 +1,243 @@
+{
+  "schema": "openai.presentation.layout/v4",
+  "unit": "px",
+  "slide": {
+    "aid": "sl/rdk7lw",
+    "id": "rdk7lw",
+    "slide": 14,
+    "layoutId": "c5858e9a-2a0f-44b3-97f5-9facf20ab11d",
+    "layoutName": "Title Slide",
+    "layoutType": "title",
+    "masterLayoutId": "2521b1f1-6fb5-4fa9-bb5c-80e2553575e3",
+    "masterLayoutName": "Master",
+    "backgroundColor": "#0F1113",
+    "frame": {
+      "left": 0,
+      "top": 0,
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "theme": {
+    "colorSchemeName": "ChatGPT",
+    "colors": {
+      "accent1": "#156082",
+      "accent2": "#E97132",
+      "accent3": "#196B24",
+      "accent4": "#0F9ED5",
+      "accent5": "#A02B93",
+      "accent6": "#4EA72E",
+      "bg1": "#FFFFFF",
+      "bg2": "#000000",
+      "tx1": "#1F1F1F",
+      "tx2": "#FFFFFF",
+      "dk1": "#000000",
+      "lt1": "#FFFFFF",
+      "dk2": "#0E2841",
+      "lt2": "#E8E8E8",
+      "hlink": "#467886",
+      "folHlink": "#96607D"
+    },
+    "typefaces": [
+      "Bahnschrift"
+    ]
+  },
+  "inheritedLayers": [
+    {
+      "scope": "layout",
+      "id": "c5858e9a-2a0f-44b3-97f5-9facf20ab11d",
+      "name": "Title Slide",
+      "type": "title",
+      "parentLayoutId": "2521b1f1-6fb5-4fa9-bb5c-80e2553575e3",
+      "elements": []
+    },
+    {
+      "scope": "master",
+      "id": "2521b1f1-6fb5-4fa9-bb5c-80e2553575e3",
+      "name": "Master",
+      "type": "master",
+      "elements": []
+    }
+  ],
+  "elements": [
+    {
+      "order": 1,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/x4n61sv6",
+      "id": "1",
+      "bbox": [
+        92,
+        146,
+        72,
+        6
+      ],
+      "geometry": "rect",
+      "fillColor": "#FF3B1F",
+      "lineWidth": 0
+    },
+    {
+      "order": 2,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/a1wnqdcf",
+      "id": "2",
+      "bbox": [
+        82,
+        207,
+        1116,
+        250
+      ],
+      "geometry": "rect",
+      "text": "DEMO",
+      "textPreview": "DEMO",
+      "resolvedFontSize": 142,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 142,
+        "typeface": "Bahnschrift",
+        "color": "#F1EEE9",
+        "bold": true,
+        "alignment": "center",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "DEMO"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "DEMO",
+          "lineSpacingPercent": 100000,
+          "resolvedTextStyle": {
+            "fontSize": 142,
+            "typeface": "Bahnschrift",
+            "color": "#F1EEE9",
+            "bold": true,
+            "alignment": "center",
+            "lineSpacing": 1
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "DEMO",
+              "fontSize": 142,
+              "typeface": "Bahnschrift",
+              "color": "#F1EEE9",
+              "bold": true,
+              "alignment": "center",
+              "lineSpacing": 1
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 3,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/b25ozid0",
+      "id": "3",
+      "bbox": [
+        1116,
+        518,
+        72,
+        6
+      ],
+      "geometry": "rect",
+      "fillColor": "#FF3B1F",
+      "lineWidth": 0
+    },
+    {
+      "order": 4,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/ozu543u9",
+      "id": "4",
+      "bbox": [
+        440,
+        544,
+        400,
+        30
+      ],
+      "geometry": "rect",
+      "text": "LIVE NAVIRA WALKTHROUGH",
+      "textPreview": "LIVE NAVIRA WALKTHROUGH",
+      "resolvedFontSize": 16,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 16,
+        "typeface": "Bahnschrift",
+        "color": "#68737A",
+        "bold": true,
+        "alignment": "center",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "LIVE NAVIRA WALKTHROUGH"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "LIVE NAVIRA WALKTHROUGH",
+          "lineSpacingPercent": 100000,
+          "resolvedTextStyle": {
+            "fontSize": 16,
+            "typeface": "Bahnschrift",
+            "color": "#68737A",
+            "bold": true,
+            "alignment": "center",
+            "lineSpacing": 1
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "LIVE NAVIRA WALKTHROUGH",
+              "fontSize": 16,
+              "typeface": "Bahnschrift",
+              "color": "#68737A",
+              "bold": true,
+              "alignment": "center",
+              "lineSpacing": 1
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    }
+  ],
+  "composeRuns": []
+}

@@ -1,0 +1,327 @@
+{"kind":"deck","id":"pr/0s7vt8","name":"Deck"}
+{"kind":"layout","layoutId":"2521b1f1-6fb5-4fa9-bb5c-80e2553575e3","name":"Master","type":"master"}
+{"kind":"layout","layoutId":"c5858e9a-2a0f-44b3-97f5-9facf20ab11d","name":"Title Slide","type":"title"}
+{"kind":"slide","id":"sl/0vf4di","slide":1,"title":"LIVE PRODUCT","textShapes":13}
+{"kind":"textbox","id":"sh/jexg36ds","slide":1,"text":"LIVE PRODUCT","textPreview":"LIVE PRODUCT","textChars":12,"textLines":1,"bbox":[662,88,180,22]}
+{"kind":"shape","id":"sh/kf6xwbud","slide":1,"bbox":[660,122,574,325]}
+{"kind":"shape","id":"sh/6hofylcj","slide":1,"bbox":[662,482,570,1]}
+{"kind":"textbox","id":"sh/7ixg7qt4","slide":1,"text":"UNDERSTAND","textPreview":"UNDERSTAND","textChars":10,"textLines":1,"bbox":[662,508,150,24]}
+{"kind":"textbox","id":"sh/8j6x0bup","slide":1,"text":"PROTECT","textPreview":"PROTECT","textChars":7,"textLines":1,"bbox":[856,508,130,24]}
+{"kind":"textbox","id":"sh/t4fy9gbu","slide":1,"text":"TEST","textPreview":"TEST","textChars":4,"textLines":1,"bbox":[1037,508,90,24]}
+{"kind":"textbox","id":"sh/mlkfmhcf","slide":1,"text":"Real data","textPreview":"Real data","textChars":9,"textLines":1,"bbox":[662,544,150,22]}
+{"kind":"textbox","id":"sh/nmdwvmdk","slide":1,"text":"Safer action","textPreview":"Safer action","textChars":12,"textLines":1,"bbox":[856,544,130,22]}
+{"kind":"textbox","id":"sh/7mdcrq94","slide":1,"text":"3D scenarios","textPreview":"3D scenarios","textChars":12,"textLines":1,"bbox":[1037,544,150,22]}
+{"kind":"shape","id":"sh/6l4bil8j","slide":1,"bbox":[48,44,46,4]}
+{"kind":"textbox","id":"sh/tovut0ru","slide":1,"text":"HACKATHON SUBMISSION","textPreview":"HACKATHON SUBMISSION","textChars":20,"textLines":1,"bbox":[48,62,260,24]}
+{"kind":"textbox","id":"sh/snmtkvqp","slide":1,"text":"NAVIRA","textPreview":"NAVIRA","textChars":6,"textLines":1,"bbox":[48,142,520,96]}
+{"kind":"textbox","id":"sh/jytcn69s","slide":1,"text":"Disaster response from\nverified signal to safer action.","textPreview":"Disaster response from | verified signal to safer action.","textChars":55,"textLines":2,"bbox":[48,255,520,126]}
+{"kind":"textbox","id":"sh/ixkbe187","slide":1,"text":"Understand the hazard. Protect people in its path. Test what comes next.","textPreview":"Understand the hazard. Protect people in its path. Test what comes next.","textChars":72,"textLines":1,"bbox":[48,410,500,70]}
+{"kind":"shape","id":"sh/5kvupgry","slide":1,"bbox":[48,548,520,1]}
+{"kind":"textbox","id":"sh/kjmtgbqd","slide":1,"text":"RISHABH MITTAL","textPreview":"RISHABH MITTAL","textChars":14,"textLines":1,"bbox":[48,575,300,28]}
+{"kind":"textbox","id":"sh/butcj69w","slide":1,"text":"Civilians · Responders · Command centers","textPreview":"Civilians · Responders · Command centers","textChars":40,"textLines":1,"bbox":[48,610,420,24]}
+{"kind":"image","id":"im/4zq1onml","slide":1,"name":"","geometry":"rect","alt":"NAVIRA landing page and live disaster interface","bbox":[662,124,570,321]}
+{"kind":"notes","id":"nt/0vf4di","slide":1,"text":"NAVIRA is a disaster-response platform that connects real hazard intelligence to civilian protection, operator coordination, and infrastructure testing. I’m Rishabh Mittal, and this is the system I built for this hackathon."}
+{"kind":"slide","id":"sl/xi2puq","slide":2,"title":"NAVIRA","textShapes":15}
+{"kind":"textbox","id":"sh/7q5s7yh0","slide":2,"text":"NAVIRA","textPreview":"NAVIRA","textChars":6,"textLines":1,"bbox":[48,26,120,22]}
+{"kind":"textbox","id":"sh/8ret03il","slide":2,"text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[1188,26,44,22]}
+{"kind":"shape","id":"sh/9s7a98z6","slide":2,"bbox":[48,59,1184,1]}
+{"kind":"textbox","id":"sh/utgb2dgb","slide":2,"text":"THE RESPONSE GAP","textPreview":"THE RESPONSE GAP","textChars":16,"textLines":1,"bbox":[48,88,320,20]}
+{"kind":"shape","id":"sh/vupsbyhw","slide":2,"bbox":[48,114,32,3]}
+{"kind":"textbox","id":"sh/wfyt43yh","slide":2,"text":"ONE DISASTER.\nTHREE BROKEN HANDOFFS.","textPreview":"ONE DISASTER. | THREE BROKEN HANDOFFS.","textChars":36,"textLines":2,"bbox":[48,132,760,132]}
+{"kind":"textbox","id":"sh/hg7ad8z2","slide":2,"text":"A warning can be accurate and still fail people if it never becomes a clear local decision.","textPreview":"A warning can be accurate and still fail people if it never becomes a clear local decision.","textChars":91,"textLines":1,"bbox":[840,148,355,90]}
+{"kind":"shape","id":"sh/axcrq907","slide":2,"bbox":[48,332,356,3]}
+{"kind":"textbox","id":"sh/bylszehs","slide":2,"text":"01","textPreview":"01","textChars":2,"textLines":1,"bbox":[48,356,62,46]}
+{"kind":"textbox","id":"sh/z6ps7a5o","slide":2,"text":"SIGNAL","textPreview":"SIGNAL","textChars":6,"textLines":1,"bbox":[124,362,240,28]}
+{"kind":"textbox","id":"sh/e5gre5o3","slide":2,"text":"Hazard feeds, official alerts, maps, closures and reporting arrive separately.","textPreview":"Hazard feeds, official alerts, maps, closures and reporting arrive separately.","textChars":78,"textLines":1,"bbox":[48,430,342,132]}
+{"kind":"shape","id":"sh/187a90nu","slide":2,"bbox":[452,332,356,3]}
+{"kind":"textbox","id":"sh/07y9gf69","slide":2,"text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[452,356,62,46]}
+{"kind":"textbox","id":"sh/ri583q5s","slide":2,"text":"DECISION","textPreview":"DECISION","textChars":8,"textLines":1,"bbox":[528,362,240,28]}
+{"kind":"textbox","id":"sh/qhwralo7","slide":2,"text":"Civilians need to know whether they are affected and where to go now.","textPreview":"Civilians need to know whether they are affected and where to go now.","textChars":69,"textLines":1,"bbox":[452,430,342,132]}
+{"kind":"shape","id":"sh/d47q50ni","slide":2,"bbox":[856,332,356,3]}
+{"kind":"textbox","id":"sh/c3y9cv6x","slide":2,"text":"03","textPreview":"03","textChars":2,"textLines":1,"bbox":[856,356,62,46]}
+{"kind":"textbox","id":"sh/3e58zq5g","slide":2,"text":"ACTION","textPreview":"ACTION","textChars":6,"textLines":1,"bbox":[932,362,240,28]}
+{"kind":"textbox","id":"sh/2dwr6lov","slide":2,"text":"Operators need one incident context for help, dispatch, resources and accountability.","textPreview":"Operators need one incident context for help, dispatch, resources and accountability.","textChars":85,"textLines":1,"bbox":[856,430,342,132]}
+{"kind":"textbox","id":"sh/69cril8n","slide":2,"text":"NAVIRA closes the handoff from verified data to coordinated response.","textPreview":"NAVIRA closes the handoff from verified data to coordinated response.","textChars":69,"textLines":1,"bbox":[48,638,860,28]}
+{"kind":"notes","id":"nt/xi2puq","slide":2,"text":"The core problem is the handoff. Data may exist, but civilians, field teams, and command centers need different answers from the same verified geographic record. NAVIRA turns that shared record into a connected response workflow."}
+{"kind":"slide","id":"sl/7ow7du","slide":3,"title":"NAVIRA","textShapes":17}
+{"kind":"textbox","id":"sh/bap4fy50","slide":3,"text":"NAVIRA","textPreview":"NAVIRA","textChars":6,"textLines":1,"bbox":[48,26,120,22]}
+{"kind":"textbox","id":"sh/cbylo36l","slide":3,"text":"03","textPreview":"03","textChars":2,"textLines":1,"bbox":[1188,26,44,22]}
+{"kind":"shape","id":"sh/xc7mh8nq","slide":3,"bbox":[48,59,1184,1]}
+{"kind":"textbox","id":"sh/ydg3qdob","slide":3,"text":"ONE CONNECTED PRODUCT STORY","textPreview":"ONE CONNECTED PRODUCT STORY","textChars":27,"textLines":1,"bbox":[48,88,320,20]}
+{"kind":"shape","id":"sh/zep4jy5w","slide":3,"bbox":[48,114,32,3]}
+{"kind":"textbox","id":"sh/kfyls36h","slide":3,"text":"UNDERSTAND → PROTECT → TEST","textPreview":"UNDERSTAND → PROTECT → TEST","textChars":27,"textLines":1,"bbox":[48,128,980,66]}
+{"kind":"textbox","id":"sh/l07ml8n2","slide":3,"text":"Disaster happens. NAVIRA detects it, finds people at risk, helps them act, and lets teams test infrastructure against the same hazard context.","textPreview":"Disaster happens. NAVIRA detects it, finds people at risk, helps them act, and lets teams test infrastructure against the same hazard con...","textChars":142,"textLines":1,"bbox":[48,206,1090,70]}
+{"kind":"shape","id":"sh/m103udon","slide":3,"bbox":[48,338,356,264]}
+{"kind":"textbox","id":"sh/7294ni58","slide":3,"text":"01","textPreview":"01","textChars":2,"textLines":1,"bbox":[68,356,60,44]}
+{"kind":"textbox","id":"sh/3ehkv2t8","slide":3,"text":"UNDERSTAND","textPreview":"UNDERSTAND","textChars":10,"textLines":1,"bbox":[68,420,310,30]}
+{"kind":"textbox","id":"sh/2doj2xcn","slide":3,"text":"Real disaster intelligence","textPreview":"Real disaster intelligence","textChars":26,"textLines":1,"bbox":[68,466,310,44]}
+{"kind":"textbox","id":"sh/p0z2xcby","slide":3,"text":"NASA EONET · GDACS · USGS\nVerified geometry · Freshness · Provenance","textPreview":"NASA EONET · GDACS · USGS | Verified geometry · Freshness · Provenance","textChars":68,"textLines":2,"bbox":[68,528,310,60]}
+{"kind":"shape","id":"sh/ozq147ud","slide":3,"bbox":[404,470,36,3]}
+{"kind":"shape","id":"sh/faxkritw","slide":3,"bbox":[438,464,14,14]}
+{"kind":"shape","id":"sh/e9ojydcb","slide":3,"bbox":[452,338,356,264]}
+{"kind":"textbox","id":"sh/1cf2tsb2","slide":3,"text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[472,356,60,44]}
+{"kind":"textbox","id":"sh/gb610nuh","slide":3,"text":"PROTECT","textPreview":"PROTECT","textChars":7,"textLines":1,"bbox":[472,420,310,30]}
+{"kind":"textbox","id":"sh/z61k3mt0","slide":3,"text":"Civilian and operator action","textPreview":"Civilian and operator action","textChars":28,"textLines":1,"bbox":[472,466,310,44]}
+{"kind":"textbox","id":"sh/y5sjahcv","slide":3,"text":"Near You · Help requests · Escape routes\nIncidents · Dispatch · Resources · Audit","textPreview":"Near You · Help requests · Escape routes | Incidents · Dispatch · Resources · Audit","textChars":81,"textLines":2,"bbox":[472,528,310,60]}
+{"kind":"shape","id":"sh/u1cn2lw3","slide":3,"bbox":[808,470,36,3]}
+{"kind":"shape","id":"sh/v2l4bqd8","slide":3,"bbox":[842,464,14,14]}
+{"kind":"shape","id":"sh/w3u54vet","slide":3,"bbox":[856,338,356,264]}
+{"kind":"textbox","id":"sh/h43md0ve","slide":3,"text":"03","textPreview":"03","textChars":2,"textLines":1,"bbox":[876,356,60,44]}
+{"kind":"textbox","id":"sh/ipwn6lwz","slide":3,"text":"TEST","textPreview":"TEST","textChars":4,"textLines":1,"bbox":[876,420,310,30]}
+{"kind":"textbox","id":"sh/jq54fqdk","slide":3,"text":"Infrastructure resilience lab","textPreview":"Infrastructure resilience lab","textChars":29,"textLines":1,"bbox":[876,466,310,44]}
+{"kind":"textbox","id":"sh/4re58ve5","slide":3,"text":"Real infrastructure · Custom models\nHazard scenarios · Side-by-side comparison","textPreview":"Real infrastructure · Custom models | Hazard scenarios · Side-by-side comparison","textChars":78,"textLines":2,"bbox":[876,528,310,60]}
+{"kind":"notes","id":"nt/7ow7du","slide":3,"text":"NAVIRA is organized around three pillars. Understand consolidates verified disaster intelligence. Protect turns that intelligence into civilian and operator action. Test extends the same disaster context into infrastructure simulation and design comparison.\n\nSources:\n- NASA EONET — https://eonet.gsfc.nasa.gov/\n- GDACS — https://www.gdacs.org/\n- USGS Earthquake Hazards Program — https://earthquake.usgs.gov/"}
+{"kind":"slide","id":"sl/hv81wa","slide":4,"title":"NAVIRA","textShapes":10}
+{"kind":"textbox","id":"sh/5snyd8ba","slide":4,"text":"NAVIRA","textPreview":"NAVIRA","textChars":6,"textLines":1,"bbox":[48,26,120,22]}
+{"kind":"textbox","id":"sh/i5wzidcj","slide":4,"text":"04","textPreview":"04","textChars":2,"textLines":1,"bbox":[1188,26,44,22]}
+{"kind":"shape","id":"sh/j65gbit4","slide":4,"bbox":[48,59,1184,1]}
+{"kind":"shape","id":"sh/svyhonul","slide":4,"bbox":[46,96,810,529]}
+{"kind":"textbox","id":"sh/6twzmdcv","slide":4,"text":"UNDERSTAND / 01","textPreview":"UNDERSTAND / 01","textChars":15,"textLines":1,"bbox":[894,108,320,20]}
+{"kind":"shape","id":"sh/ru50fitg","slide":4,"bbox":[894,134,32,3]}
+{"kind":"textbox","id":"sh/gzyhsnux","slide":4,"text":"A live operating picture,\nnot a decorative map.","textPreview":"A live operating picture, | not a decorative map.","textChars":47,"textLines":2,"bbox":[894,154,330,94]}
+{"kind":"shape","id":"sh/107ilsbi","slide":4,"bbox":[896,300,9,9]}
+{"kind":"textbox","id":"sh/5gzqpg7a","slide":4,"text":"MapLibre + OpenStreetMap-based geography","textPreview":"MapLibre + OpenStreetMap-based geography","textChars":40,"textLines":1,"bbox":[919,292,290,40]}
+{"kind":"shape","id":"sh/4fqpwb6p","slide":4,"bbox":[896,355,9,9]}
+{"kind":"textbox","id":"sh/3eh8n6pk","slide":4,"text":"NASA EONET, GDACS and USGS event feeds","textPreview":"NASA EONET, GDACS and USGS event feeds","textChars":38,"textLines":1,"bbox":[919,347,290,40]}
+{"kind":"shape","id":"sh/ido7uloz","slide":4,"bbox":[896,410,9,9]}
+{"kind":"textbox","id":"sh/d4zqt07m","slide":4,"text":"Coordinates, source, status and timestamps","textPreview":"Coordinates, source, status and timestamps","textChars":42,"textLines":1,"bbox":[919,402,290,40]}
+{"kind":"shape","id":"sh/s3qp0v61","slide":4,"bbox":[896,465,9,9]}
+{"kind":"textbox","id":"sh/rih8rqpg","slide":4,"text":"Source-native geometry where available","textPreview":"Source-native geometry where available","textChars":38,"textLines":1,"bbox":[919,457,290,40]}
+{"kind":"shape","id":"sh/qh87ylov","slide":4,"bbox":[896,520,9,9]}
+{"kind":"textbox","id":"sh/t8fqhw72","slide":4,"text":"Explicit unavailable and degraded states","textPreview":"Explicit unavailable and degraded states","textChars":40,"textLines":1,"bbox":[919,512,290,40]}
+{"kind":"textbox","id":"sh/8n6por6x","slide":4,"text":"Every layer carries source attribution and freshness.","textPreview":"Every layer carries source attribution and freshness.","textChars":53,"textLines":1,"bbox":[894,595,320,44]}
+{"kind":"image","id":"im/87m54nyl","slide":4,"name":"","geometry":"rect","alt":"NAVIRA live global disaster map with selected verified event","bbox":[48,98,806,525]}
+{"kind":"notes","id":"nt/hv81wa","slide":4,"text":"The map is the operational center of NAVIRA. It uses real geographic proportions and live sources. Each record keeps its coordinates, category, timestamp, status, source and freshness. When a source does not provide enough geometry or availability, NAVIRA says so instead of inventing it.\n\nSources:\n- MapLibre GL JS — https://maplibre.org/\n- OpenFreeMap — https://openfreemap.org/\n- OpenStreetMap — https://www.openstreetmap.org/\n- NASA EONET — https://eonet.gsfc.nasa.gov/\n- GDACS — https://www.gdacs.org/\n- USGS Earthquake Hazards Program — https://earthquake.usgs.gov/"}
+{"kind":"slide","id":"sl/feon8j","slide":5,"title":"NAVIRA","textShapes":13}
+{"kind":"textbox","id":"sh/4va9k321","slide":5,"text":"NAVIRA","textPreview":"NAVIRA","textChars":6,"textLines":1,"bbox":[48,26,120,22]}
+{"kind":"textbox","id":"sh/ju18by1g","slide":5,"text":"05","textPreview":"05","textChars":2,"textLines":1,"bbox":[1188,26,44,22]}
+{"kind":"shape","id":"sh/its7itkv","slide":5,"bbox":[48,59,1184,1]}
+{"kind":"textbox","id":"sh/tk3qh8ji","slide":5,"text":"PROTECT / NEAR YOU","textPreview":"PROTECT / NEAR YOU","textChars":18,"textLines":1,"bbox":[48,88,320,20]}
+{"kind":"shape","id":"sh/szu9o3ix","slide":5,"bbox":[48,114,32,3]}
+{"kind":"textbox","id":"sh/ryl8fy1c","slide":5,"text":"THE GLOBAL MAP BECOMES\nA LOCAL SAFETY DECISION.","textPreview":"THE GLOBAL MAP BECOMES | A LOCAL SAFETY DECISION.","textChars":47,"textLines":2,"bbox":[48,130,440,112]}
+{"kind":"textbox","id":"sh/6xcrmd07","slide":5,"text":"With permission, NAVIRA centers on the person—not on a random event—and ranks reviewed hazards by real distance.","textPreview":"With permission, NAVIRA centers on the person—not on a random event—and ranks reviewed hazards by real distance.","textChars":112,"textLines":1,"bbox":[48,270,420,106]}
+{"kind":"textbox","id":"sh/94zq5oje","slide":5,"text":"01","textPreview":"01","textChars":2,"textLines":1,"bbox":[48,420,38,30]}
+{"kind":"textbox","id":"sh/83qpcj2t","slide":5,"text":"Browser geolocation with explicit permission","textPreview":"Browser geolocation with explicit permission","textChars":44,"textLines":1,"bbox":[102,419,350,35]}
+{"kind":"textbox","id":"sh/2hobatkv","slide":5,"text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[48,471,38,30]}
+{"kind":"textbox","id":"sh/nixc3e1g","slide":5,"text":"Distance from the person to verified events","textPreview":"Distance from the person to verified events","textChars":43,"textLines":1,"bbox":[102,470,350,35]}
+{"kind":"textbox","id":"sh/o36dcj21","slide":5,"text":"03","textPreview":"03","textChars":2,"textLines":1,"bbox":[48,522,38,30]}
+{"kind":"textbox","id":"sh/p4zu5ojm","slide":5,"text":"Deterministic point-versus-geometry checks","textPreview":"Deterministic point-versus-geometry checks","textChars":42,"textLines":1,"bbox":[102,521,350,35]}
+{"kind":"textbox","id":"sh/a58vetk7","slide":5,"text":"04","textPreview":"04","textChars":2,"textLines":1,"bbox":[48,573,38,30]}
+{"kind":"textbox","id":"sh/b6hc7y1c","slide":5,"text":"No invented danger radius","textPreview":"No invented danger radius","textChars":25,"textLines":1,"bbox":[102,572,350,35]}
+{"kind":"shape","id":"sh/c7qdg32x","slide":5,"bbox":[516,98,718,539]}
+{"kind":"image","id":"im/ud0zyp47","slide":5,"name":"","geometry":"rect","alt":"NAVIRA Near You mode centered on a civilian location with nearby verified events","bbox":[518,100,714,535]}
+{"kind":"notes","id":"nt/feon8j","slide":5,"text":"Near You starts from the civilian’s actual location, with permission. It centers the map on the user, retrieves the surrounding verified events, computes distance, and checks the user’s coordinates against source geometry where that geometry exists. NAVIRA never creates a danger circle just to fill a gap."}
+{"kind":"slide","id":"sl/yv054i","slide":6,"title":"PROTECT / CIVILIAN FLOW","textShapes":21}
+{"kind":"shape","id":"sh/relgnud4","slide":6,"bbox":[450,86,784,443]}
+{"kind":"shape","id":"sh/tgnypkvu","slide":6,"bbox":[48,47,46,4]}
+{"kind":"textbox","id":"sh/ehwzipcf","slide":6,"text":"PROTECT / CIVILIAN FLOW","textPreview":"PROTECT / CIVILIAN FLOW","textChars":23,"textLines":1,"bbox":[48,68,300,24]}
+{"kind":"textbox","id":"sh/fi5grud0","slide":6,"text":"FROM “AM I IN DANGER?”\nTO “HOW DO I LEAVE?”","textPreview":"FROM “AM I IN DANGER?” | TO “HOW DO I LEAVE?”","textChars":43,"textLines":2,"bbox":[48,130,352,112]}
+{"kind":"textbox","id":"sh/0jehkzul","slide":6,"text":"01","textPreview":"01","textChars":2,"textLines":1,"bbox":[48,286,38,24]}
+{"kind":"textbox","id":"sh/1knyt4v6","slide":6,"text":"WORLD","textPreview":"WORLD","textChars":5,"textLines":1,"bbox":[100,285,250,26]}
+{"kind":"shape","id":"sh/ulsf65cb","slide":6,"bbox":[65,314,1,22]}
+{"kind":"textbox","id":"sh/vm1gfadw","slide":6,"text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[48,337,38,24]}
+{"kind":"textbox","id":"sh/fepsnq5o","slide":6,"text":"NEAR YOU","textPreview":"NEAR YOU","textChars":8,"textLines":1,"bbox":[100,336,250,26]}
+{"kind":"shape","id":"sh/edgbelo3","slide":6,"bbox":[65,365,1,22]}
+{"kind":"textbox","id":"sh/107ap0nu","slide":6,"text":"03","textPreview":"03","textChars":2,"textLines":1,"bbox":[48,388,38,24]}
+{"kind":"textbox","id":"sh/0zytgv69","slide":6,"text":"HAZARD","textPreview":"HAZARD","textChars":6,"textLines":1,"bbox":[100,387,250,26]}
+{"kind":"shape","id":"sh/ra5sjq5s","slide":6,"bbox":[65,416,1,22]}
+{"kind":"textbox","id":"sh/q9wbqlo7","slide":6,"text":"04","textPreview":"04","textChars":2,"textLines":1,"bbox":[48,439,38,24]}
+{"kind":"textbox","id":"sh/dc7algni","slide":6,"text":"DESTINATION","textPreview":"DESTINATION","textChars":11,"textLines":1,"bbox":[100,438,250,26]}
+{"kind":"shape","id":"sh/sbytsb6x","slide":6,"bbox":[65,467,1,22]}
+{"kind":"textbox","id":"sh/365sf6pg","slide":6,"text":"05","textPreview":"05","textChars":2,"textLines":1,"bbox":[48,490,38,24]}
+{"kind":"textbox","id":"sh/i5wbm1ov","slide":6,"text":"ROUTES","textPreview":"ROUTES","textChars":6,"textLines":1,"bbox":[100,489,250,26]}
+{"kind":"shape","id":"sh/m1cby18n","slide":6,"bbox":[65,518,1,22]}
+{"kind":"textbox","id":"sh/72lcr698","slide":6,"text":"06","textPreview":"06","textChars":2,"textLines":1,"bbox":[48,541,38,24]}
+{"kind":"textbox","id":"sh/83ut0bqt","slide":6,"text":"ESCAPE","textPreview":"ESCAPE","textChars":6,"textLines":1,"bbox":[100,540,250,26]}
+{"kind":"textbox","id":"sh/t4nutgre","slide":6,"text":"Real road routes. Verified exposure checks. Clear reasons when a route changes.","textPreview":"Real road routes. Verified exposure checks. Clear reasons when a route changes.","textChars":79,"textLines":1,"bbox":[48,620,340,64]}
+{"kind":"shape","id":"sh/u5wb218z","slide":6,"bbox":[452,575,780,1]}
+{"kind":"textbox","id":"sh/v65cv69k","slide":6,"text":"FASTEST","textPreview":"FASTEST","textChars":7,"textLines":1,"bbox":[452,600,110,24]}
+{"kind":"textbox","id":"sh/g7ed4bq5","slide":6,"text":"LOWER VERIFIED EXPOSURE","textPreview":"LOWER VERIFIED EXPOSURE","textChars":23,"textLines":1,"bbox":[658,600,240,24]}
+{"kind":"textbox","id":"sh/h8nuxgra","slide":6,"text":"MONITORED NAVIGATION","textPreview":"MONITORED NAVIGATION","textChars":20,"textLines":1,"bbox":[982,600,220,24]}
+{"kind":"textbox","id":"sh/i9wv6l8v","slide":6,"text":"Time + distance","textPreview":"Time + distance","textChars":15,"textLines":1,"bbox":[452,635,150,22]}
+{"kind":"textbox","id":"sh/3a5czq9g","slide":6,"text":"Explains hazard differences","textPreview":"Explains hazard differences","textChars":27,"textLines":1,"bbox":[658,635,240,22]}
+{"kind":"textbox","id":"sh/d4repkbi","slide":6,"text":"Rechecks meaningful changes","textPreview":"Rechecks meaningful changes","textChars":27,"textLines":1,"bbox":[982,635,220,22]}
+{"kind":"image","id":"im/pg7ulsr2","slide":6,"name":"","geometry":"rect","alt":"NAVIRA civilian safety workflow and local route planning interface","bbox":[452,88,780,439]}
+{"kind":"notes","id":"nt/yv054i","slide":6,"text":"This is the civilian safety sequence: World, Near You, Hazard, Destination, Routes, Escape. NAVIRA only exposes escape planning when verified geometry supports the risk state. It uses a real routing engine for travel time and road geometry, then compares route exposure to verified hazards. During navigation it can re-evaluate when hazards, alerts or verified closures materially change, and it tells the user why.\n\nSources:\n- OSRM routing engine — https://project-osrm.org/\n- Open511 road-event data standard — https://open511.org/"}
+{"kind":"slide","id":"sl/2krkkt","slide":7,"title":"NAVIRA","textShapes":20}
+{"kind":"textbox","id":"sh/3el47mxk","slide":7,"text":"NAVIRA","textPreview":"NAVIRA","textChars":6,"textLines":1,"bbox":[48,26,120,22]}
+{"kind":"textbox","id":"sh/ofu50re5","slide":7,"text":"07","textPreview":"07","textChars":2,"textLines":1,"bbox":[1188,26,44,22]}
+{"kind":"shape","id":"sh/pg3m9cfq","slide":7,"bbox":[48,59,1184,1]}
+{"kind":"textbox","id":"sh/epsnuxw3","slide":7,"text":"PROTECT / COMMUNITY EVIDENCE","textPreview":"PROTECT / COMMUNITY EVIDENCE","textChars":28,"textLines":1,"bbox":[48,88,320,20]}
+{"kind":"shape","id":"sh/fa1432xo","slide":7,"bbox":[48,114,32,3]}
+{"kind":"textbox","id":"sh/gbu5w7et","slide":7,"text":"A HUMAN-VERIFIED PATH FROM\nTHE STREET TO THE OPERATING MAP.","textPreview":"A HUMAN-VERIFIED PATH FROM | THE STREET TO THE OPERATING MAP.","textChars":59,"textLines":2,"bbox":[48,130,890,104]}
+{"kind":"textbox","id":"sh/1c3m5cfe","slide":7,"text":"01","textPreview":"01","textChars":2,"textLines":1,"bbox":[48,318,50,32]}
+{"kind":"shape","id":"sh/ylwn61w7","slide":7,"bbox":[48,362,196,2]}
+{"kind":"textbox","id":"sh/z65of6xs","slide":7,"text":"CAPTURE","textPreview":"CAPTURE","textChars":7,"textLines":1,"bbox":[48,388,196,28]}
+{"kind":"textbox","id":"sh/f6xg765o","slide":7,"text":"Take or upload a photo and provide the event type.","textPreview":"Take or upload a photo and provide the event type.","textChars":50,"textLines":1,"bbox":[48,433,196,105]}
+{"kind":"shape","id":"sh/u5oze143","slide":7,"bbox":[246,364,18,3]}
+{"kind":"shape","id":"sh/h8fi9gnu","slide":7,"bbox":[262,358,14,14]}
+{"kind":"textbox","id":"sh/g76hgbm9","slide":7,"text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[286,318,50,32]}
+{"kind":"shape","id":"sh/3ax0bq5k","slide":7,"bbox":[286,362,196,2]}
+{"kind":"textbox","id":"sh/29oz2l4z","slide":7,"text":"LOCATE","textPreview":"LOCATE","textChars":6,"textLines":1,"bbox":[286,388,196,28]}
+{"kind":"textbox","id":"sh/pwfidg3q","slide":7,"text":"Attach device location after explicit permission.","textPreview":"Attach device location after explicit permission.","textChars":49,"textLines":1,"bbox":[286,433,196,105]}
+{"kind":"shape","id":"sh/4b6h4bm5","slide":7,"bbox":[484,364,18,3]}
+{"kind":"shape","id":"sh/ryh0fqlw","slide":7,"bbox":[500,358,14,14]}
+{"kind":"textbox","id":"sh/qx8z6l4b","slide":7,"text":"03","textPreview":"03","textChars":2,"textLines":1,"bbox":[524,318,50,32]}
+{"kind":"shape","id":"sh/mtsjepoj","slide":7,"bbox":[524,362,196,4]}
+{"kind":"textbox","id":"sh/nu1k7up4","slide":7,"text":"VERIFY","textPreview":"VERIFY","textChars":6,"textLines":1,"bbox":[524,388,196,28]}
+{"kind":"textbox","id":"sh/ovalgz6p","slide":7,"text":"An operator reviews the evidence and classifies it.","textPreview":"An operator reviews the evidence and classifies it.","textChars":51,"textLines":1,"bbox":[524,433,196,105]}
+{"kind":"shape","id":"sh/9w3294nu","slide":7,"bbox":[722,364,18,3]}
+{"kind":"shape","id":"sh/e5sjapo7","slide":7,"bbox":[738,358,14,14]}
+{"kind":"textbox","id":"sh/zq1k3aps","slide":7,"text":"04","textPreview":"04","textChars":2,"textLines":1,"bbox":[762,318,50,32]}
+{"kind":"shape","id":"sh/0ra1cf6d","slide":7,"bbox":[762,362,196,2]}
+{"kind":"textbox","id":"sh/1sj25k7y","slide":7,"text":"PUBLISH","textPreview":"PUBLISH","textChars":7,"textLines":1,"bbox":[762,388,196,28]}
+{"kind":"textbox","id":"sh/ylc3m9or","slide":7,"text":"A verified community incident enters the shared map.","textPreview":"A verified community incident enters the shared map.","textChars":52,"textLines":1,"bbox":[762,433,196,105]}
+{"kind":"shape","id":"sh/jmlkfe5c","slide":7,"bbox":[960,364,18,3]}
+{"kind":"shape","id":"sh/tg7m587e","slide":7,"bbox":[976,358,14,14]}
+{"kind":"textbox","id":"sh/sfy5c3qt","slide":7,"text":"05","textPreview":"05","textChars":2,"textLines":1,"bbox":[1000,318,50,32]}
+{"kind":"shape","id":"sh/7u543yp8","slide":7,"bbox":[1000,362,196,2]}
+{"kind":"textbox","id":"sh/6twnat8n","slide":7,"text":"PROTECT","textPreview":"PROTECT","textChars":7,"textLines":1,"bbox":[1000,388,196,28]}
+{"kind":"textbox","id":"sh/5snm18r2","slide":7,"text":"Nearby civilians receive the context and can open routes.","textPreview":"Nearby civilians receive the context and can open routes.","textChars":57,"textLines":1,"bbox":[1000,433,196,105]}
+{"kind":"shape","id":"sh/kre583qx","slide":7,"bbox":[48,592,1184,62]}
+{"kind":"textbox","id":"sh/jq54zy9c","slide":7,"text":"Help requests remain gated by verified local hazard context; evidence is never promoted without human review.","textPreview":"Help requests remain gated by verified local hazard context; evidence is never promoted without human review.","textChars":109,"textLines":1,"bbox":[70,610,1140,28]}
+{"kind":"notes","id":"nt/2krkkt","slide":7,"text":"Civilians can contribute evidence without letting unverified reports become operational truth. They capture or upload an image, attach their location with permission, and submit a small incident form. An operator must review the evidence before it becomes a community incident on the map. Help requests remain tied to verified nearby hazards."}
+{"kind":"slide","id":"sl/w5tnn9","slide":8,"title":"NAVIRA","textShapes":5}
+{"kind":"textbox","id":"sh/neto7m5w","slide":8,"text":"NAVIRA","textPreview":"NAVIRA","textChars":6,"textLines":1,"bbox":[48,26,120,22]}
+{"kind":"textbox","id":"sh/8fm5grmh","slide":8,"text":"08","textPreview":"08","textChars":2,"textLines":1,"bbox":[1188,26,44,22]}
+{"kind":"shape","id":"sh/9gv69wn2","slide":8,"bbox":[48,59,1184,1]}
+{"kind":"textbox","id":"sh/y9knah4f","slide":8,"text":"PROTECT / OPERATOR COMMAND","textPreview":"PROTECT / OPERATOR COMMAND","textChars":26,"textLines":1,"bbox":[48,88,320,20]}
+{"kind":"shape","id":"sh/zato3m50","slide":8,"bbox":[48,114,32,3]}
+{"kind":"textbox","id":"sh/0b25c7ml","slide":8,"text":"ONE INCIDENT CONTEXT ACROSS\nTHE ENTIRE RESPONSE CHAIN.","textPreview":"ONE INCIDENT CONTEXT ACROSS | THE ENTIRE RESPONSE CHAIN.","textChars":54,"textLines":2,"bbox":[48,128,720,95]}
+{"kind":"textbox","id":"sh/lcb65cnq","slide":8,"text":"An active incident stays visible while operators move from hazards to people, assignments, resources and accountability.","textPreview":"An active incident stays visible while operators move from hazards to people, assignments, resources and accountability.","textChars":120,"textLines":1,"bbox":[820,139,380,84]}
+{"kind":"shape","id":"sh/i547m14j","slide":8,"bbox":[46,268,1188,394]}
+{"kind":"image","id":"im/i1onapc3","slide":8,"name":"","geometry":"rect","alt":"NAVIRA operator command dashboard with active incident context","bbox":[48,270,1184,390]}
+{"kind":"notes","id":"nt/w5tnn9","slide":8,"text":"The operator workspace is built around an active incident context. That context links hazards, alerts, help requests, assignments, resources, road restrictions and notes. Operators can create incidents, switch between authorized incidents, change operational phase, and keep the same context visible across the response modules."}
+{"kind":"slide","id":"sl/rzr3bz","slide":9,"title":"NAVIRA","textShapes":14}
+{"kind":"textbox","id":"sh/z6l8zils","slide":9,"text":"NAVIRA","textPreview":"NAVIRA","textChars":6,"textLines":1,"bbox":[48,26,120,22]}
+{"kind":"textbox","id":"sh/07u9snmd","slide":9,"text":"09","textPreview":"09","textChars":2,"textLines":1,"bbox":[1188,26,44,22]}
+{"kind":"shape","id":"sh/l8na1s3y","slide":9,"bbox":[48,59,1184,1]}
+{"kind":"shape","id":"sh/q1crmd4b","slide":9,"bbox":[46,98,730,526]}
+{"kind":"textbox","id":"sh/c3u9o3mh","slide":9,"text":"PROTECT / FIELD OPERATIONS","textPreview":"PROTECT / FIELD OPERATIONS","textChars":26,"textLines":1,"bbox":[818,106,320,20]}
+{"kind":"shape","id":"sh/d43qx832","slide":9,"bbox":[818,132,32,3]}
+{"kind":"textbox","id":"sh/axwryx4f","slide":9,"text":"SEE PEOPLE.\nMOVE RESPONSE.","textPreview":"SEE PEOPLE. | MOVE RESPONSE.","textChars":26,"textLines":2,"bbox":[818,150,360,86]}
+{"kind":"shape","id":"sh/vy5s72l0","slide":9,"bbox":[818,278,360,1]}
+{"kind":"textbox","id":"sh/fy5w3a5c","slide":9,"text":"PEOPLE + HAZARDS","textPreview":"PEOPLE + HAZARDS","textChars":16,"textLines":1,"bbox":[818,290,160,24]}
+{"kind":"textbox","id":"sh/uxcfu5or","slide":9,"text":"Consented civilian locations, verified events and reviewed evidence.","textPreview":"Consented civilian locations, verified events and reviewed evidence.","textChars":68,"textLines":1,"bbox":[982,286,206,50]}
+{"kind":"shape","id":"sh/hkne50ni","slide":9,"bbox":[818,350,360,1]}
+{"kind":"textbox","id":"sh/gzexwvmx","slide":9,"text":"HELP QUEUE","textPreview":"HELP QUEUE","textChars":10,"textLines":1,"bbox":[818,362,160,24]}
+{"kind":"textbox","id":"sh/3m5w7a5o","slide":9,"text":"Requests progress from verified to assigned, dispatched, on scene and resolved.","textPreview":"Requests progress from verified to assigned, dispatched, on scene and resolved.","textChars":79,"textLines":1,"bbox":[982,358,206,50]}
+{"kind":"shape","id":"sh/2lwfy543","slide":9,"bbox":[818,422,360,1]}
+{"kind":"textbox","id":"sh/pone9kne","slide":9,"text":"RESPONDER DISPATCH","textPreview":"RESPONDER DISPATCH","textChars":18,"textLines":1,"bbox":[818,434,160,24]}
+{"kind":"textbox","id":"sh/4nex0fmt","slide":9,"text":"Role-checked assignments with acknowledgement and status transitions.","textPreview":"Role-checked assignments with acknowledgement and status transitions.","textChars":69,"textLines":1,"bbox":[982,430,206,50]}
+{"kind":"shape","id":"sh/rqpwbu5k","slide":9,"bbox":[818,494,360,1]}
+{"kind":"textbox","id":"sh/qpwf2p4z","slide":9,"text":"RESOURCE COORDINATION","textPreview":"RESOURCE COORDINATION","textChars":21,"textLines":1,"bbox":[818,506,160,24]}
+{"kind":"textbox","id":"sh/ml0zuto7","slide":9,"text":"Allocate verified stock without exceeding available quantities.","textPreview":"Allocate verified stock without exceeding available quantities.","textChars":63,"textLines":1,"bbox":[982,502,206,50]}
+{"kind":"shape","id":"sh/nm903eps","slide":9,"bbox":[818,566,360,1]}
+{"kind":"textbox","id":"sh/onihwj6d","slide":9,"text":"ROUTE MONITORING","textPreview":"ROUTE MONITORING","textChars":16,"textLines":1,"bbox":[818,578,160,24]}
+{"kind":"textbox","id":"sh/9ori5o7y","slide":9,"text":"Surface hazards and trusted restrictions that intersect active routes.","textPreview":"Surface hazards and trusted restrictions that intersect active routes.","textChars":70,"textLines":1,"bbox":[982,574,206,50]}
+{"kind":"image","id":"im/uxgjehsn","slide":9,"name":"","geometry":"rect","alt":"NAVIRA operator people and hazards map","bbox":[48,100,726,522]}
+{"kind":"notes","id":"nt/rzr3bz","slide":9,"text":"The operator can see consented civilian positions alongside verified hazards and reviewed community evidence. Help requests follow a server-authoritative lifecycle. Responders can be assigned and acknowledge work. Resources can be allocated only from known stock. Active routes can be monitored against verified hazard and road-restriction changes."}
+{"kind":"slide","id":"sl/c6swz0","slide":10,"title":"NAVIRA","textShapes":8}
+{"kind":"textbox","id":"sh/9o7y54zm","slide":10,"text":"NAVIRA","textPreview":"NAVIRA","textChars":6,"textLines":1,"bbox":[48,26,120,22]}
+{"kind":"textbox","id":"sh/m1gzu9gv","slide":10,"text":"10","textPreview":"10","textChars":2,"textLines":1,"bbox":[1188,26,44,22]}
+{"kind":"shape","id":"sh/nmpg3uhg","slide":10,"bbox":[48,59,1184,1]}
+{"kind":"textbox","id":"sh/wrih0jyx","slide":10,"text":"COMMAND + ACCOUNTABILITY","textPreview":"COMMAND + ACCOUNTABILITY","textChars":24,"textLines":1,"bbox":[48,88,320,20]}
+{"kind":"shape","id":"sh/xsri9ozi","slide":10,"bbox":[48,114,32,3]}
+{"kind":"textbox","id":"sh/apgzy9g7","slide":10,"text":"EVERY DECISION KEEPS ITS CONTEXT—\nAND ITS HISTORY.","textPreview":"EVERY DECISION KEEPS ITS CONTEXT— | AND ITS HISTORY.","textChars":50,"textLines":2,"bbox":[48,126,900,94]}
+{"kind":"shape","id":"sh/bqpg7ehs","slide":10,"bbox":[46,262,572,324]}
+{"kind":"shape","id":"sh/lwridozu","slide":10,"bbox":[662,262,572,324]}
+{"kind":"textbox","id":"sh/oj6pkjix","slide":10,"text":"INCIDENT CONTEXT","textPreview":"INCIDENT CONTEXT","textChars":16,"textLines":1,"bbox":[48,604,260,24]}
+{"kind":"textbox","id":"sh/nixoby1c","slide":10,"text":"AUDIT TRAIL","textPreview":"AUDIT TRAIL","textChars":11,"textLines":1,"bbox":[664,604,260,24]}
+{"kind":"textbox","id":"sh/2h47it0r","slide":10,"text":"Name · type · geography · severity · phase · lead · linked records","textPreview":"Name · type · geography · severity · phase · lead · linked records","textChars":66,"textLines":1,"bbox":[48,638,560,22]}
+{"kind":"textbox","id":"sh/x8f6h8je","slide":10,"text":"System · civilian · responder · operator actions with before/after state","textPreview":"System · civilian · responder · operator actions with before/after state","textChars":72,"textLines":1,"bbox":[664,638,568,22]}
+{"kind":"image","id":"im/tkfyp4v6","slide":10,"name":"","geometry":"rect","alt":"NAVIRA incident command context and incident creation workspace","bbox":[48,264,568,320]}
+{"kind":"image","id":"im/yt0beh07","slide":10,"name":"","geometry":"rect","alt":"NAVIRA immutable operational audit trail","bbox":[664,264,568,320]}
+{"kind":"notes","id":"nt/c6swz0","slide":10,"text":"Command context and accountability are connected. An incident stores its area, severity, phase, status, organization, lead and linked operational records. The audit trail records server time, actor, role, action, affected record, previous state, resulting state and metadata. The interface distinguishes system, civilian, responder and operator actions."}
+{"kind":"slide","id":"sl/ok3r04","slide":11,"title":"NAVIRA","textShapes":11}
+{"kind":"textbox","id":"sh/j29kf6lc","slide":11,"text":"NAVIRA","textPreview":"NAVIRA","textChars":6,"textLines":1,"bbox":[48,26,120,22]}
+{"kind":"textbox","id":"sh/43ilobmh","slide":11,"text":"11","textPreview":"11","textChars":2,"textLines":1,"bbox":[1188,26,44,22]}
+{"kind":"shape","id":"sh/54r2hg32","slide":11,"bbox":[48,59,1184,1]}
+{"kind":"textbox","id":"sh/6503ql4n","slide":11,"text":"SHARED INTELLIGENCE","textPreview":"SHARED INTELLIGENCE","textChars":19,"textLines":1,"bbox":[48,88,320,20]}
+{"kind":"shape","id":"sh/r69kjql8","slide":11,"bbox":[48,114,32,3]}
+{"kind":"textbox","id":"sh/s7ilsbmt","slide":11,"text":"FILTER THE WORLD\nDOWN TO A PLACE.","textPreview":"FILTER THE WORLD | DOWN TO A PLACE.","textChars":33,"textLines":2,"bbox":[48,130,400,92]}
+{"kind":"textbox","id":"sh/t8r2lg3e","slide":11,"text":"Both civilians and operators can inspect location-specific analytics, event types, source coverage, timelines and reporting context.","textPreview":"Both civilians and operators can inspect location-specific analytics, event types, source coverage, timelines and reporting context.","textChars":132,"textLines":1,"bbox":[48,250,400,104]}
+{"kind":"textbox","id":"sh/m9wjeh4j","slide":11,"text":"ANALYTICS","textPreview":"ANALYTICS","textChars":9,"textLines":1,"bbox":[48,405,128,24]}
+{"kind":"textbox","id":"sh/7a5k7m54","slide":11,"text":"Country, city or area filters over the same live event records.","textPreview":"Country, city or area filters over the same live event records.","textChars":63,"textLines":1,"bbox":[182,403,270,46]}
+{"kind":"shape","id":"sh/fut4rqxs","slide":11,"bbox":[48,457,400,1]}
+{"kind":"textbox","id":"sh/utk3ylg7","slide":11,"text":"EVENT LEDGER","textPreview":"EVENT LEDGER","textChars":12,"textLines":1,"bbox":[48,477,128,24]}
+{"kind":"textbox","id":"sh/hwbmt0fi","slide":11,"text":"Traceable source records with timestamps and status.","textPreview":"Traceable source records with timestamps and status.","textChars":52,"textLines":1,"bbox":[182,475,270,46]}
+{"kind":"shape","id":"sh/gv2lkvyx","slide":11,"bbox":[48,529,400,1]}
+{"kind":"textbox","id":"sh/7q94nqhg","slide":11,"text":"NEWS CONTEXT","textPreview":"NEWS CONTEXT","textChars":12,"textLines":1,"bbox":[48,549,128,24]}
+{"kind":"textbox","id":"sh/6p03ulgv","slide":11,"text":"Reporting is visually separated from verified agency data.","textPreview":"Reporting is visually separated from verified agency data.","textChars":58,"textLines":1,"bbox":[182,547,270,46]}
+{"kind":"shape","id":"sh/tsbmpgfm","slide":11,"bbox":[48,601,400,1]}
+{"kind":"shape","id":"sh/sr2lwby1","slide":11,"bbox":[498,99,736,525]}
+{"kind":"image","id":"im/4zihsvah","slide":11,"name":"","geometry":"rect","alt":"NAVIRA live disaster analytics filtered from verified source records","bbox":[500,101,732,521]}
+{"kind":"notes","id":"nt/ok3r04","slide":11,"text":"NAVIRA also provides shared intelligence views. Civilians and operators can filter analytics by place, inspect event categories and source coverage, follow the event ledger and timeline, and open related reporting. News remains clearly labeled as reporting context rather than agency-verified operational data."}
+{"kind":"slide","id":"sl/0rk6ec","slide":12,"title":"NAVIRA","textShapes":15}
+{"kind":"textbox","id":"sh/3uxwjat0","slide":12,"text":"NAVIRA","textPreview":"NAVIRA","textChars":6,"textLines":1,"bbox":[48,26,120,22]}
+{"kind":"textbox","id":"sh/of6dsfal","slide":12,"text":"12","textPreview":"12","textChars":2,"textLines":1,"bbox":[1188,26,44,22]}
+{"kind":"shape","id":"sh/pgfel0b6","slide":12,"bbox":[48,59,1184,1]}
+{"kind":"textbox","id":"sh/epovmlsj","slide":12,"text":"TEST / INFRASTRUCTURE SIMULATION","textPreview":"TEST / INFRASTRUCTURE SIMULATION","textChars":32,"textLines":1,"bbox":[48,88,320,20]}
+{"kind":"shape","id":"sh/fqxwfqt4","slide":12,"bbox":[48,114,32,3]}
+{"kind":"textbox","id":"sh/gr6dovap","slide":12,"text":"FROM MAPPED STRUCTURE\nTO TESTABLE 3D SCENARIO.","textPreview":"FROM MAPPED STRUCTURE | TO TESTABLE 3D SCENARIO.","textChars":46,"textLines":2,"bbox":[48,130,540,98]}
+{"kind":"textbox","id":"sh/1sfeh0bu","slide":12,"text":"A visual and heuristic lab—never an unsupported engineering verdict.","textPreview":"A visual and heuristic lab—never an unsupported engineering verdict.","textChars":68,"textLines":1,"bbox":[718,156,470,48]}
+{"kind":"shape","id":"sh/6l4vils7","slide":12,"bbox":[46,258,778,406]}
+{"kind":"textbox","id":"sh/vyhc3yt0","slide":12,"text":"IMPORT","textPreview":"IMPORT","textChars":6,"textLines":1,"bbox":[864,274,100,24]}
+{"kind":"textbox","id":"sh/ax8badsv","slide":12,"text":"Search real infrastructure or resolve an address.","textPreview":"Search real infrastructure or resolve an address.","textChars":49,"textLines":1,"bbox":[864,301,330,42]}
+{"kind":"shape","id":"sh/x0zu58b6","slide":12,"bbox":[864,341,330,1]}
+{"kind":"textbox","id":"sh/wzqdc3al","slide":12,"text":"VERIFY","textPreview":"VERIFY","textChars":6,"textLines":1,"bbox":[864,348,100,24]}
+{"kind":"textbox","id":"sh/j21c7itc","slide":12,"text":"Review exterior imagery before grounded AI description.","textPreview":"Review exterior imagery before grounded AI description.","textChars":55,"textLines":1,"bbox":[864,375,330,42]}
+{"kind":"shape","id":"sh/i18vedsr","slide":12,"bbox":[864,415,330,1]}
+{"kind":"textbox","id":"sh/54ju9sbi","slide":12,"text":"BUILD","textPreview":"BUILD","textChars":5,"textLines":1,"bbox":[864,422,100,24]}
+{"kind":"textbox","id":"sh/k3adgnax","slide":12,"text":"Generate or directly edit faces, edges and vertices.","textPreview":"Generate or directly edit faces, edges and vertices.","textChars":52,"textLines":1,"bbox":[864,449,330,42]}
+{"kind":"shape","id":"sh/z6xcvets","slide":12,"bbox":[864,489,330,1]}
+{"kind":"textbox","id":"sh/y5ob2tcn","slide":12,"text":"SIMULATE","textPreview":"SIMULATE","textChars":8,"textLines":1,"bbox":[864,496,100,24]}
+{"kind":"textbox","id":"sh/2lwfahcv","slide":12,"text":"Earthquake, flood and wind scenarios over time.","textPreview":"Earthquake, flood and wind scenarios over time.","textChars":47,"textLines":1,"bbox":[864,523,330,42]}
+{"kind":"shape","id":"sh/3m5g3mdg","slide":12,"bbox":[864,563,330,1]}
+{"kind":"textbox","id":"sh/onexcru1","slide":12,"text":"COMPARE","textPreview":"COMPARE","textChars":7,"textLines":1,"bbox":[864,570,100,24]}
+{"kind":"textbox","id":"sh/pony5wvm","slide":12,"text":"Same building + same hazard, Design A versus Design B.","textPreview":"Same building + same hazard, Design A versus Design B.","textChars":54,"textLines":1,"bbox":[864,597,330,42]}
+{"kind":"image","id":"im/ul8z2lwv","slide":12,"name":"","geometry":"rect","alt":"NAVIRA infrastructure simulation lab with 3D viewport and hazard controls","bbox":[48,260,774,402]}
+{"kind":"notes","id":"nt/0rk6ec","slide":12,"text":"The Test pillar is the Infrastructure Simulation Lab. Operators can import mapped infrastructure, search by address, review exterior imagery in a human-in-the-loop workflow, use AI only to describe approved visual evidence, or build a custom structure. The 3D editor supports direct face, edge and vertex manipulation. Hazard scenarios animate deformation, water, wind, cracks and damage regions. Scenario comparison keeps the building and hazard constant while design parameters differ. Outputs are clearly labeled visual or heuristic and never claim engineering safety without a validated solver."}
+{"kind":"slide","id":"sl/36jdz0","slide":13,"title":"NAVIRA","textShapes":17}
+{"kind":"textbox","id":"sh/1w7m1g36","slide":13,"text":"NAVIRA","textPreview":"NAVIRA","textChars":6,"textLines":1,"bbox":[48,26,120,22]}
+{"kind":"textbox","id":"sh/etw3q1kf","slide":13,"text":"13","textPreview":"13","textChars":2,"textLines":1,"bbox":[1188,26,44,22]}
+{"kind":"shape","id":"sh/fu54z6l0","slide":13,"bbox":[48,59,1184,1]}
+{"kind":"textbox","id":"sh/s7elor29","slide":13,"text":"TRUST ARCHITECTURE","textPreview":"TRUST ARCHITECTURE","textChars":18,"textLines":1,"bbox":[48,88,320,20]}
+{"kind":"shape","id":"sh/t8nmxw3u","slide":13,"bbox":[48,114,32,3]}
+{"kind":"textbox","id":"sh/65w3m1kj","slide":13,"text":"FACTS STAY DETERMINISTIC.\nAI STAYS IN ITS LANE.","textPreview":"FACTS STAY DETERMINISTIC. | AI STAYS IN ITS LANE.","textChars":47,"textLines":2,"bbox":[48,128,820,94]}
+{"kind":"shape","id":"sh/r654vmlo","slide":13,"bbox":[48,284,1184,62]}
+{"kind":"textbox","id":"sh/c3i50v2t","slide":13,"text":"01","textPreview":"01","textChars":2,"textLines":1,"bbox":[68,301,54,26]}
+{"kind":"textbox","id":"sh/d4rm903y","slide":13,"text":"AUTHORITATIVE / OPEN SOURCES","textPreview":"AUTHORITATIVE / OPEN SOURCES","textChars":28,"textLines":1,"bbox":[148,299,330,28]}
+{"kind":"textbox","id":"sh/1onedcju","slide":13,"text":"Disasters · alerts · roads · geography · infrastructure","textPreview":"Disasters · alerts · roads · geography · infrastructure","textChars":55,"textLines":1,"bbox":[506,299,688,30]}
+{"kind":"shape","id":"sh/0nedk729","slide":13,"bbox":[48,362,1184,62]}
+{"kind":"textbox","id":"sh/fm5cb21o","slide":13,"text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[68,379,54,26]}
+{"kind":"textbox","id":"sh/elcvihk3","slide":13,"text":"DETERMINISTIC CORE","textPreview":"DETERMINISTIC CORE","textChars":18,"textLines":1,"bbox":[148,377,330,28]}
+{"kind":"textbox","id":"sh/dk3u9cji","slide":13,"text":"Geometry checks · distance · routing · state transitions · allocations","textPreview":"Geometry checks · distance · routing · state transitions · allocations","textChars":70,"textLines":1,"bbox":[506,377,688,30]}
+{"kind":"shape","id":"sh/sjudg72d","slide":13,"bbox":[48,440,1184,62]}
+{"kind":"textbox","id":"sh/rilc721s","slide":13,"text":"03","textPreview":"03","textChars":2,"textLines":1,"bbox":[68,457,54,26]}
+{"kind":"textbox","id":"sh/qhcvexk7","slide":13,"text":"ROLE-BASED WORKFLOWS","textPreview":"ROLE-BASED WORKFLOWS","textChars":20,"textLines":1,"bbox":[148,455,330,28]}
+{"kind":"textbox","id":"sh/xg7elwj2","slide":13,"text":"Civilian · responder · operator · organization and incident access","textPreview":"Civilian · responder · operator · organization and incident access","textChars":66,"textLines":1,"bbox":[506,455,688,30]}
+{"kind":"shape","id":"sh/cfydsrih","slide":13,"bbox":[48,518,1184,62]}
+{"kind":"textbox","id":"sh/wj6xofqt","slide":13,"text":"04","textPreview":"04","textChars":2,"textLines":1,"bbox":[68,535,54,26]}
+{"kind":"textbox","id":"sh/xkfyh0ry","slide":13,"text":"GROUNDED AI EXPLANATION","textPreview":"GROUNDED AI EXPLANATION","textChars":23,"textLines":1,"bbox":[148,533,330,28]}
+{"kind":"textbox","id":"sh/ah4fm58n","slide":13,"text":"Explain retrieved facts and approved images; never create operational truth","textPreview":"Explain retrieved facts and approved images; never create operational truth","textChars":75,"textLines":1,"bbox":[506,533,688,30]}
+{"kind":"textbox","id":"sh/vixgfa98","slide":13,"text":"Server-side secrets · HttpOnly auth cookies · role enforcement · durable Upstash-backed state · explicit source freshness","textPreview":"Server-side secrets · HttpOnly auth cookies · role enforcement · durable Upstash-backed state · explicit source freshness","textChars":121,"textLines":1,"bbox":[48,632,1184,28]}
+{"kind":"notes","id":"nt/36jdz0","slide":13,"text":"Trust is an architectural choice. Source data enters through explicit adapters. Geographic risk, route geometry, state transitions and allocations remain deterministic. Roles and incident access are enforced on the server. AI can explain already retrieved facts and interpret operator-approved images, but it cannot decide whether a disaster exists, invent coordinates, create hazard boundaries, choose routes or issue evacuation decisions. Secrets remain server-side, authentication uses HttpOnly cookies, and durable state can run on Upstash-backed storage."}
+{"kind":"slide","id":"sl/rdk7lw","slide":14,"title":"DEMO","textShapes":2}
+{"kind":"shape","id":"sh/x4n61sv6","slide":14,"bbox":[92,146,72,6]}
+{"kind":"textbox","id":"sh/a1wnqdcf","slide":14,"text":"DEMO","textPreview":"DEMO","textChars":4,"textLines":1,"bbox":[82,207,1116,250]}
+{"kind":"shape","id":"sh/b25ozid0","slide":14,"bbox":[1116,518,72,6]}
+{"kind":"textbox","id":"sh/ozu543u9","slide":14,"text":"LIVE NAVIRA WALKTHROUGH","textPreview":"LIVE NAVIRA WALKTHROUGH","textChars":23,"textLines":1,"bbox":[440,544,400,30]}
+{"kind":"notes","id":"nt/rdk7lw","slide":14,"text":"This is the live demo. I’ll move through the civilian and operator sides, show the real-data map and Near You flow, trace the operational response, and finish in the Infrastructure Simulation Lab."}
+{"kind":"slide","id":"sl/31oo6s","slide":15,"title":"NAVIRA","textShapes":8}
+{"kind":"shape","id":"sh/d4vedsju","slide":15,"bbox":[48,44,46,4]}
+{"kind":"textbox","id":"sh/q1kvid0j","slide":15,"text":"NAVIRA","textPreview":"NAVIRA","textChars":6,"textLines":1,"bbox":[48,114,460,82]}
+{"kind":"textbox","id":"sh/r2twbi14","slide":15,"text":"FROM VERIFIED SIGNAL\nTO COORDINATED ACTION.","textPreview":"FROM VERIFIED SIGNAL | TO COORDINATED ACTION.","textChars":43,"textLines":2,"bbox":[48,244,820,130]}
+{"kind":"textbox","id":"sh/4z2dg32d","slide":15,"text":"UNDERSTAND","textPreview":"UNDERSTAND","textChars":10,"textLines":1,"bbox":[52,458,210,30]}
+{"kind":"shape","id":"sh/50be98jy","slide":15,"bbox":[226,473,104,3]}
+{"kind":"shape","id":"sh/ixkvetk7","slide":15,"bbox":[328,467,14,14]}
+{"kind":"textbox","id":"sh/3ytw7y1s","slide":15,"text":"PROTECT","textPreview":"PROTECT","textChars":7,"textLines":1,"bbox":[366,458,180,30]}
+{"kind":"shape","id":"sh/gv2dc32h","slide":15,"bbox":[530,473,104,3]}
+{"kind":"shape","id":"sh/hwbe58jm","slide":15,"bbox":[632,467,14,14]}
+{"kind":"textbox","id":"sh/tc765k32","slide":15,"text":"TEST","textPreview":"TEST","textChars":4,"textLines":1,"bbox":[670,458,150,30]}
+{"kind":"shape","id":"sh/sby5wf2h","slide":15,"bbox":[48,570,1184,1]}
+{"kind":"textbox","id":"sh/7apo3alc","slide":15,"text":"RISHABH MITTAL","textPreview":"RISHABH MITTAL","textChars":14,"textLines":1,"bbox":[48,604,300,32]}
+{"kind":"textbox","id":"sh/69gnu5kr","slide":15,"text":"Hackathon submission","textPreview":"Hackathon submission","textChars":20,"textLines":1,"bbox":[48,640,300,24]}
+{"kind":"textbox","id":"sh/lo761036","slide":15,"text":"A serious disaster-response system built around real geography, verified sources and human decisions.","textPreview":"A serious disaster-response system built around real geography, verified sources and human decisions.","textChars":101,"textLines":1,"bbox":[714,603,518,60]}
+{"kind":"notes","id":"nt/31oo6s","slide":15,"text":"NAVIRA brings verified disaster intelligence, civilian protection, operator coordination and infrastructure testing into one coherent system. It is built to make the next decision clearer, faster and more accountable. Thank you."}

@@ -1,0 +1,788 @@
+{
+  "schema": "openai.presentation.layout/v4",
+  "unit": "px",
+  "slide": {
+    "aid": "sl/c6swz0",
+    "id": "c6swz0",
+    "slide": 10,
+    "layoutId": "c5858e9a-2a0f-44b3-97f5-9facf20ab11d",
+    "layoutName": "Title Slide",
+    "layoutType": "title",
+    "masterLayoutId": "2521b1f1-6fb5-4fa9-bb5c-80e2553575e3",
+    "masterLayoutName": "Master",
+    "backgroundColor": "#0F1113",
+    "frame": {
+      "left": 0,
+      "top": 0,
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "theme": {
+    "colorSchemeName": "ChatGPT",
+    "colors": {
+      "accent1": "#156082",
+      "accent2": "#E97132",
+      "accent3": "#196B24",
+      "accent4": "#0F9ED5",
+      "accent5": "#A02B93",
+      "accent6": "#4EA72E",
+      "bg1": "#FFFFFF",
+      "bg2": "#000000",
+      "tx1": "#1F1F1F",
+      "tx2": "#FFFFFF",
+      "dk1": "#000000",
+      "lt1": "#FFFFFF",
+      "dk2": "#0E2841",
+      "lt2": "#E8E8E8",
+      "hlink": "#467886",
+      "folHlink": "#96607D"
+    },
+    "typefaces": [
+      "Arial",
+      "Bahnschrift"
+    ]
+  },
+  "inheritedLayers": [
+    {
+      "scope": "layout",
+      "id": "c5858e9a-2a0f-44b3-97f5-9facf20ab11d",
+      "name": "Title Slide",
+      "type": "title",
+      "parentLayoutId": "2521b1f1-6fb5-4fa9-bb5c-80e2553575e3",
+      "elements": []
+    },
+    {
+      "scope": "master",
+      "id": "2521b1f1-6fb5-4fa9-bb5c-80e2553575e3",
+      "name": "Master",
+      "type": "master",
+      "elements": []
+    }
+  ],
+  "elements": [
+    {
+      "order": 1,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/9o7y54zm",
+      "id": "1",
+      "bbox": [
+        48,
+        26,
+        120,
+        22
+      ],
+      "geometry": "rect",
+      "text": "NAVIRA",
+      "textPreview": "NAVIRA",
+      "resolvedFontSize": 14,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 14,
+        "typeface": "Bahnschrift",
+        "color": "#F1EEE9",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "NAVIRA"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "NAVIRA",
+          "lineSpacingPercent": 100000,
+          "resolvedTextStyle": {
+            "fontSize": 14,
+            "typeface": "Bahnschrift",
+            "color": "#F1EEE9",
+            "bold": true,
+            "alignment": "left",
+            "lineSpacing": 1
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "NAVIRA",
+              "fontSize": 14,
+              "typeface": "Bahnschrift",
+              "color": "#F1EEE9",
+              "bold": true,
+              "alignment": "left",
+              "lineSpacing": 1
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 2,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/m1gzu9gv",
+      "id": "2",
+      "bbox": [
+        1188,
+        26,
+        44,
+        22
+      ],
+      "geometry": "rect",
+      "text": "10",
+      "textPreview": "10",
+      "resolvedFontSize": 13,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 13,
+        "typeface": "Bahnschrift",
+        "color": "#68737A",
+        "bold": true,
+        "alignment": "right",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "10"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "10",
+          "lineSpacingPercent": 100000,
+          "resolvedTextStyle": {
+            "fontSize": 13,
+            "typeface": "Bahnschrift",
+            "color": "#68737A",
+            "bold": true,
+            "alignment": "right",
+            "lineSpacing": 1
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "10",
+              "fontSize": 13,
+              "typeface": "Bahnschrift",
+              "color": "#68737A",
+              "bold": true,
+              "alignment": "right",
+              "lineSpacing": 1
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 3,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/nmpg3uhg",
+      "id": "3",
+      "bbox": [
+        48,
+        59,
+        1184,
+        1
+      ],
+      "geometry": "rect",
+      "fillColor": "#34393D",
+      "lineWidth": 0
+    },
+    {
+      "order": 4,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/wrih0jyx",
+      "id": "4",
+      "bbox": [
+        48,
+        88,
+        320,
+        20
+      ],
+      "geometry": "rect",
+      "text": "COMMAND + ACCOUNTABILITY",
+      "textPreview": "COMMAND + ACCOUNTABILITY",
+      "resolvedFontSize": 12,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 12,
+        "typeface": "Bahnschrift",
+        "color": "#FF3B1F",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "COMMAND + ACCOUNTABILITY"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "COMMAND + ACCOUNTABILITY",
+          "lineSpacingPercent": 100000,
+          "resolvedTextStyle": {
+            "fontSize": 12,
+            "typeface": "Bahnschrift",
+            "color": "#FF3B1F",
+            "bold": true,
+            "alignment": "left",
+            "lineSpacing": 1
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "COMMAND + ACCOUNTABILITY",
+              "fontSize": 12,
+              "typeface": "Bahnschrift",
+              "color": "#FF3B1F",
+              "bold": true,
+              "alignment": "left",
+              "lineSpacing": 1
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 5,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/xsri9ozi",
+      "id": "5",
+      "bbox": [
+        48,
+        114,
+        32,
+        3
+      ],
+      "geometry": "rect",
+      "fillColor": "#FF3B1F",
+      "lineWidth": 0
+    },
+    {
+      "order": 6,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/apgzy9g7",
+      "id": "6",
+      "bbox": [
+        48,
+        126,
+        900,
+        94
+      ],
+      "geometry": "rect",
+      "text": "EVERY DECISION KEEPS ITS CONTEXT—\nAND ITS HISTORY.",
+      "textPreview": "EVERY DECISION KEEPS ITS CONTEXT— | AND ITS HISTORY.",
+      "resolvedFontSize": 39,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 39,
+        "typeface": "Bahnschrift",
+        "color": "#F1EEE9",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "EVERY DECISION KEEPS ITS CONTEXT—"
+          },
+          {
+            "index": 2,
+            "text": "AND ITS HISTORY."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "EVERY DECISION KEEPS ITS CONTEXT—",
+          "lineSpacingPercent": 92000,
+          "resolvedTextStyle": {
+            "fontSize": 39,
+            "typeface": "Bahnschrift",
+            "color": "#F1EEE9",
+            "bold": true,
+            "alignment": "left",
+            "lineSpacing": 0.92
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "EVERY DECISION KEEPS ITS CONTEXT—",
+              "fontSize": 39,
+              "typeface": "Bahnschrift",
+              "color": "#F1EEE9",
+              "bold": true,
+              "alignment": "left",
+              "lineSpacing": 0.92
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 2,
+          "text": "AND ITS HISTORY.",
+          "lineSpacingPercent": 92000,
+          "resolvedTextStyle": {
+            "fontSize": 39,
+            "typeface": "Bahnschrift",
+            "color": "#F1EEE9",
+            "bold": true,
+            "alignment": "left",
+            "lineSpacing": 0.92
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "AND ITS HISTORY.",
+              "fontSize": 39,
+              "typeface": "Bahnschrift",
+              "color": "#F1EEE9",
+              "bold": true,
+              "alignment": "left",
+              "lineSpacing": 0.92
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 7,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/bqpg7ehs",
+      "id": "7",
+      "bbox": [
+        46,
+        262,
+        572,
+        324
+      ],
+      "geometry": "rect",
+      "fillColor": "#CBC7C0",
+      "lineWidth": 0
+    },
+    {
+      "order": 8,
+      "kind": "image",
+      "scope": "slide",
+      "aid": "im/tkfyp4v6",
+      "id": "8",
+      "bbox": [
+        48,
+        264,
+        568,
+        320
+      ],
+      "geometry": "rect",
+      "alt": "NAVIRA incident command context and incident creation workspace",
+      "contentType": "image/png",
+      "imageFit": "cover",
+      "imageMask": {
+        "geometry": "rect"
+      },
+      "asset": {
+        "assetId": "a888cc58-fd65-44aa-97c4-26312d522866",
+        "contentType": "image/png",
+        "byteLength": 207159
+      }
+    },
+    {
+      "order": 9,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/lwridozu",
+      "id": "9",
+      "bbox": [
+        662,
+        262,
+        572,
+        324
+      ],
+      "geometry": "rect",
+      "fillColor": "#CBC7C0",
+      "lineWidth": 0
+    },
+    {
+      "order": 10,
+      "kind": "image",
+      "scope": "slide",
+      "aid": "im/yt0beh07",
+      "id": "10",
+      "bbox": [
+        664,
+        264,
+        568,
+        320
+      ],
+      "geometry": "rect",
+      "alt": "NAVIRA immutable operational audit trail",
+      "contentType": "image/png",
+      "imageFit": "cover",
+      "imageMask": {
+        "geometry": "rect"
+      },
+      "asset": {
+        "assetId": "76f5a3c0-7627-4547-853e-8a4e5c34bf16",
+        "contentType": "image/png",
+        "byteLength": 216528
+      }
+    },
+    {
+      "order": 11,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/oj6pkjix",
+      "id": "11",
+      "bbox": [
+        48,
+        604,
+        260,
+        24
+      ],
+      "geometry": "rect",
+      "text": "INCIDENT CONTEXT",
+      "textPreview": "INCIDENT CONTEXT",
+      "resolvedFontSize": 15,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 15,
+        "typeface": "Bahnschrift",
+        "color": "#FF3B1F",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "INCIDENT CONTEXT"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "INCIDENT CONTEXT",
+          "lineSpacingPercent": 100000,
+          "resolvedTextStyle": {
+            "fontSize": 15,
+            "typeface": "Bahnschrift",
+            "color": "#FF3B1F",
+            "bold": true,
+            "alignment": "left",
+            "lineSpacing": 1
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "INCIDENT CONTEXT",
+              "fontSize": 15,
+              "typeface": "Bahnschrift",
+              "color": "#FF3B1F",
+              "bold": true,
+              "alignment": "left",
+              "lineSpacing": 1
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 12,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/nixoby1c",
+      "id": "12",
+      "bbox": [
+        664,
+        604,
+        260,
+        24
+      ],
+      "geometry": "rect",
+      "text": "AUDIT TRAIL",
+      "textPreview": "AUDIT TRAIL",
+      "resolvedFontSize": 15,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 15,
+        "typeface": "Bahnschrift",
+        "color": "#FF3B1F",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "AUDIT TRAIL"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "AUDIT TRAIL",
+          "lineSpacingPercent": 100000,
+          "resolvedTextStyle": {
+            "fontSize": 15,
+            "typeface": "Bahnschrift",
+            "color": "#FF3B1F",
+            "bold": true,
+            "alignment": "left",
+            "lineSpacing": 1
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "AUDIT TRAIL",
+              "fontSize": 15,
+              "typeface": "Bahnschrift",
+              "color": "#FF3B1F",
+              "bold": true,
+              "alignment": "left",
+              "lineSpacing": 1
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 13,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/2h47it0r",
+      "id": "13",
+      "bbox": [
+        48,
+        638,
+        560,
+        22
+      ],
+      "geometry": "rect",
+      "text": "Name · type · geography · severity · phase · lead · linked records",
+      "textPreview": "Name · type · geography · severity · phase · lead · linked records",
+      "resolvedFontSize": 14,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 14,
+        "typeface": "Arial",
+        "color": "#68737A",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Name · type · geography · severity · phase · lead · linked records"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Name · type · geography · severity · phase · lead · linked records",
+          "lineSpacingPercent": 100000,
+          "resolvedTextStyle": {
+            "fontSize": 14,
+            "typeface": "Arial",
+            "color": "#68737A",
+            "alignment": "left",
+            "lineSpacing": 1
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "Name · type · geography · severity · phase · lead · linked records",
+              "fontSize": 14,
+              "typeface": "Arial",
+              "color": "#68737A",
+              "alignment": "left",
+              "lineSpacing": 1
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 14,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/x8f6h8je",
+      "id": "14",
+      "bbox": [
+        664,
+        638,
+        568,
+        22
+      ],
+      "geometry": "rect",
+      "text": "System · civilian · responder · operator actions with before/after state",
+      "textPreview": "System · civilian · responder · operator actions with before/after state",
+      "resolvedFontSize": 14,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 14,
+        "typeface": "Arial",
+        "color": "#68737A",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "System · civilian · responder · operator actions with before/after state"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "System · civilian · responder · operator actions with before/after state",
+          "lineSpacingPercent": 100000,
+          "resolvedTextStyle": {
+            "fontSize": 14,
+            "typeface": "Arial",
+            "color": "#68737A",
+            "alignment": "left",
+            "lineSpacing": 1
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "System · civilian · responder · operator actions with before/after state",
+              "fontSize": 14,
+              "typeface": "Arial",
+              "color": "#68737A",
+              "alignment": "left",
+              "lineSpacing": 1
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    }
+  ],
+  "composeRuns": []
+}
