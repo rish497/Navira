@@ -1,6 +1,6 @@
 import { createHash, randomBytes, randomUUID, scrypt, timingSafeEqual } from 'node:crypto';
-import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { readJsonStore, writeJsonStore } from './durableStore.js';
 
 const authLocation = () => {
   const directory = path.resolve(process.env.NAVIRA_AUTH_DATA_DIR || '.navira-data');
@@ -74,24 +74,19 @@ function publicUser(user) {
 
 async function loadStore() {
   if (!storePromise) {
-    storePromise = readFile(authLocation().file, 'utf8').then((value) => {
-      const parsed = JSON.parse(value);
-      return { ...EMPTY_STORE, ...parsed, users: parsed.users || [], sessions: parsed.sessions || [] };
-    }).catch((error) => {
-      if (error.code === 'ENOENT') return { ...EMPTY_STORE, users: [], sessions: [] };
-      throw error;
-    });
+    storePromise = readJsonStore('auth', authLocation().file, EMPTY_STORE).then((parsed) => ({
+      ...EMPTY_STORE,
+      ...parsed,
+      users: parsed.users || [],
+      sessions: parsed.sessions || [],
+    }));
   }
   return storePromise;
 }
 
 async function persistStore(store) {
   store.updatedAt = new Date().toISOString();
-  const { directory, file } = authLocation();
-  await mkdir(directory, { recursive: true });
-  const temporaryPath = `${file}.${process.pid}.tmp`;
-  await writeFile(temporaryPath, JSON.stringify(store, null, 2), { encoding: 'utf8', mode: 0o600 });
-  await rename(temporaryPath, file);
+  await writeJsonStore('auth', authLocation().file, store);
 }
 
 function mutateStore(operation) {

@@ -1,7 +1,7 @@
-import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { booleanPointInPolygon, circle, distance, point } from '@turf/turf';
+import { readJsonStore, writeJsonStore } from './durableStore.js';
 
 const storeLocation = () => {
   const directory = path.resolve(process.env.NAVIRA_OPERATIONS_DATA_DIR || '.navira-data');
@@ -34,23 +34,14 @@ export function actorFromRequest(request) {
 }
 
 async function loadStore() {
-  if (!storePromise) storePromise = readFile(storeLocation().file, 'utf8')
-    .then((value) => ({ ...EMPTY_STORE, ...JSON.parse(value) }))
-    .catch((error) => {
-      if (error.code === 'ENOENT') return { ...EMPTY_STORE };
-      throw error;
-    });
+  if (!storePromise) storePromise = readJsonStore('operations', storeLocation().file, EMPTY_STORE);
   return storePromise;
 }
 
 async function persist(store) {
   store.updatedAt = new Date().toISOString();
   writeQueue = writeQueue.then(async () => {
-    const { directory, file } = storeLocation();
-    await mkdir(directory, { recursive: true });
-    const temporaryPath = `${file}.${process.pid}.${Date.now()}.tmp`;
-    await writeFile(temporaryPath, JSON.stringify(store, null, 2), { encoding: 'utf8', mode: 0o600 });
-    await rename(temporaryPath, file);
+    await writeJsonStore('operations', storeLocation().file, store);
   });
   await writeQueue;
 }

@@ -2,25 +2,23 @@ services:
   - type: web
     name: navira
     runtime: node
-    plan: 0.5c-512mb
+    plan: free
     region: singapore
     buildCommand: npm ci --include=dev && npm run build
     startCommand: npm start
     healthCheckPath: /
     autoDeployTrigger: commit
-    disk:
-      name: navira-data
-      mountPath: /var/data/navira
-      sizeGB: 1
     envVars:
       - key: NODE_VERSION
         value: 22.17.1
       - key: NAVIRA_AUTH_PEPPER
         generateValue: true
-      - key: NAVIRA_AUTH_DATA_DIR
-        value: /var/data/navira
-      - key: NAVIRA_OPERATIONS_DATA_DIR
-        value: /var/data/navira
+      - key: NAVIRA_STORE_NAMESPACE
+        value: navira
+      - key: UPSTASH_REDIS_REST_URL
+        sync: false
+      - key: UPSTASH_REDIS_REST_TOKEN
+        sync: false
       - key: YOLO_AUTO_MODEL
         value: qwen3.8-flash
       - key: YOLO_AUTO_API_KEY
